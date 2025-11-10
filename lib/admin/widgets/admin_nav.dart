@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'admin_home.dart';
+import 'admin_side_drawer.dart';
+import 'admin_Home.dart';
+import 'screens/registration_management_screen.dart';
+import 'screens/service_slot_management_screen.dart';
+import 'screens/booking_request_management_screen.dart';
+import 'screens/marketing_campaign_management_screen.dart';
 import 'admin_settings.dart';
-
 
 class AdminNav extends StatefulWidget {
   const AdminNav({super.key});
@@ -11,26 +15,33 @@ class AdminNav extends StatefulWidget {
 }
 
 class _AdminNavState extends State<AdminNav> {
-  int _currentIndex = 0;
+  int _selectedIndex = 0; 
 
-  final List<Widget> _pages = [
-    AdminHome(),
-    AdminSettings(),
-
+  final List<Widget> _screens = [
+    const AdminHome(),
+    const RegistrationManagementScreen(),
+    const ServiceSlotManagementScreen(),
+    const BookingRequestManagementScreen(),
+    const MarketingCampaignManagementScreen(),
+    const AdminSettings(),
   ];
+
+  void _onItemTapped(int index) {
+    setState(() => _selectedIndex = index);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF8FAFC),
+        foregroundColor: const Color(0xFF0D141B),
       ),
+      drawer: AdminSideDrawer(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
+      ),
+      body: _screens[_selectedIndex],
     );
   }
 }

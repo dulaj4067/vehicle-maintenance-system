@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Add this import
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminSettings extends StatelessWidget {
   const AdminSettings({super.key});
 
-  // Cache keys (duplicated for simplicity)
+  
   static const String _cacheRoleKey = 'user_role';
   static const String _cacheStatusKey = 'user_status';
   static const String _cacheLastCheckKey = 'user_last_check';
@@ -23,9 +23,9 @@ class AdminSettings extends StatelessWidget {
 
     try {
       await supabase.auth.signOut();
-      await _clearCache(); // Clear cache on logout
+      await _clearCache();
 
-      // Navigate back to login page
+      
       if (!context.mounted) return;
       context.go('/login');
     } catch (e) {
