@@ -1,4 +1,6 @@
+// lib/admin/widgets/AdminNav.dart   (or wherever you keep it)
 import 'package:flutter/material.dart';
+
 import 'admin_side_drawer.dart';
 import 'admin_Home.dart';
 import 'screens/registration_management_screen.dart';
@@ -15,15 +17,30 @@ class AdminNav extends StatefulWidget {
 }
 
 class _AdminNavState extends State<AdminNav> {
-  int _selectedIndex = 0; 
+  int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const AdminHome(),
-    const RegistrationManagementScreen(),
-    const ServiceSlotManagementScreen(),
-    const BookingRequestManagementScreen(),
-    const MarketingCampaignManagementScreen(),
-    const AdminSettings(),
+  // -----------------------------------------------------------------
+  //  Screen widgets
+  // -----------------------------------------------------------------
+  static const List<Widget> _screens = [
+    AdminHome(),
+    RegistrationManagementScreen(),
+    ServiceSlotManagementScreen(),
+    BookingRequestManagementScreen(),
+    MarketingCampaignManagementScreen(),
+    AdminSettings(),
+  ];
+
+  // -----------------------------------------------------------------
+  //  Titles that match the screens (order must be the same!)
+  // -----------------------------------------------------------------
+  static const List<String> _titles = [
+    'Dashboard',
+    'Registrations',
+    'Service Schedule',
+    'Bookings',
+    'Campaigns',
+    'Settings',
   ];
 
   void _onItemTapped(int index) {
@@ -36,6 +53,11 @@ class _AdminNavState extends State<AdminNav> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF8FAFC),
         foregroundColor: const Color(0xFF0D141B),
+        title: Text(
+          _titles[_selectedIndex],
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        centerTitle: true,
       ),
       drawer: AdminSideDrawer(
         selectedIndex: _selectedIndex,
