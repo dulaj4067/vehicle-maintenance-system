@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'customer_home.dart';
+import 'customer_vehicles.dart';
+import 'customer_bookings.dart';
+import 'customer_profile.dart';
 import 'customer_settings.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class CustomerNav extends StatefulWidget {
   const CustomerNav({super.key});
@@ -13,21 +17,86 @@ class _CustomerNavState extends State<CustomerNav> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    CustomerHome(),
-    CustomerSettings(),
+    const CustomerHome(),
+    const CustomerVehicles(),
+    const CustomerBookings(),
+    const CustomerProfile(),
+    const CustomerSettings(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
+    return Theme(
+      data: Theme.of(context).copyWith(
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: IndexedStack(
+          index: _currentIndex,
+          children: _pages,
+        ),
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Container(
+            decoration: const BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: Colors.grey,
+                  width: 0.7,
+                ),
+              ),
+            ),
+            child: BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.white,
+              elevation: 0,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.grey,
+              selectedFontSize: 12,
+              unselectedFontSize: 12,
+              showSelectedLabels: true,
+              showUnselectedLabels: true,
+              selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+              currentIndex: _currentIndex,
+              onTap: (index) => setState(() => _currentIndex = index),
+              items: const [
+                BottomNavigationBarItem(
+                  icon: FaIcon(FontAwesomeIcons.house, size: 18),
+                  activeIcon: FaIcon(FontAwesomeIcons.solidHouse,
+                      size: 18, color: Colors.black),
+                  label: 'Home',
+                ),
+                BottomNavigationBarItem(
+                  icon: FaIcon(FontAwesomeIcons.car, size: 18),
+                  activeIcon:
+                      FaIcon(FontAwesomeIcons.car, size: 18, color: Colors.black),
+                  label: 'Vehicles',
+                ),
+                BottomNavigationBarItem(
+                  icon: FaIcon(FontAwesomeIcons.calendar, size: 18),
+                  activeIcon: FaIcon(FontAwesomeIcons.solidCalendar,
+                      size: 18, color: Colors.black),
+                  label: 'Bookings',
+                ),
+                BottomNavigationBarItem(
+                  icon: FaIcon(FontAwesomeIcons.user, size: 18),
+                  activeIcon: FaIcon(FontAwesomeIcons.solidUser,
+                      size: 18, color: Colors.black),
+                  label: 'Profile',
+                ),
+                BottomNavigationBarItem(
+                  icon: FaIcon(FontAwesomeIcons.gear, size: 18),
+                  activeIcon:
+                      FaIcon(FontAwesomeIcons.gear, size: 18, color: Colors.black),
+                  label: 'Settings',
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
