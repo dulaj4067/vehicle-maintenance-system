@@ -6,11 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AdminSettings extends StatefulWidget {
   const AdminSettings({super.key});
 
-  @override
-  State<AdminSettings> createState() => _AdminSettingsState();
-}
-
-class _AdminSettingsState extends State<AdminSettings> {
+  
   static const String _cacheRoleKey = 'user_role';
   static const String _cacheStatusKey = 'user_status';
   static const String _cacheLastCheckKey = 'user_last_check';
@@ -34,8 +30,8 @@ class _AdminSettingsState extends State<AdminSettings> {
       await supabase.auth.signOut();
       await _clearCache();
 
-      if (!mounted) return;
       
+      if (!context.mounted) return;
       context.go('/login');
     } catch (e) {
       if (!mounted) return;

@@ -1,7 +1,13 @@
+// lib/admin/widgets/AdminNav.dart   (or wherever you keep it)
 import 'package:flutter/material.dart';
-import 'admin_home.dart';
-import 'admin_settings.dart';
 
+import 'admin_side_drawer.dart';
+import 'admin_Home.dart';
+import 'screens/registration_management_screen.dart';
+import 'screens/service_slot_management_screen.dart';
+import 'screens/booking_request_management_screen.dart';
+import 'screens/marketing_campaign_management_screen.dart';
+import 'admin_settings.dart';
 
 class AdminNav extends StatefulWidget {
   const AdminNav({super.key});
@@ -11,26 +17,53 @@ class AdminNav extends StatefulWidget {
 }
 
 class _AdminNavState extends State<AdminNav> {
-  int _currentIndex = 0;
+  int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
+  // -----------------------------------------------------------------
+  //  Screen widgets
+  // -----------------------------------------------------------------
+  static const List<Widget> _screens = [
     AdminHome(),
+    RegistrationManagementScreen(),
+    ServiceSlotManagementScreen(),
+    BookingRequestManagementScreen(),
+    MarketingCampaignManagementScreen(),
     AdminSettings(),
-
   ];
+
+  // -----------------------------------------------------------------
+  //  Titles that match the screens (order must be the same!)
+  // -----------------------------------------------------------------
+  static const List<String> _titles = [
+    'Dashboard',
+    'Registrations',
+    'Service Schedule',
+    'Bookings',
+    'Campaigns',
+    'Settings',
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() => _selectedIndex = index);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF8FAFC),
+        foregroundColor: const Color(0xFF0D141B),
+        title: Text(
+          _titles[_selectedIndex],
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        centerTitle: true,
       ),
+      drawer: AdminSideDrawer(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
+      ),
+      body: _screens[_selectedIndex],
     );
   }
 }
