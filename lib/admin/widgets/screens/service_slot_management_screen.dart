@@ -371,7 +371,6 @@ class _ServiceSlotManagementScreenState
             ),
           ),
 
-          // UPDATED HERE
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Text('Slots',
@@ -391,6 +390,10 @@ class _ServiceSlotManagementScreenState
                           final avail = s['is_available'] as bool;
                           final service = s['service_type'] == 'service' ? 'Service' : 'Maintenance';
 
+                          // Check if slot is in the past
+                          final slotDate = DateTime.parse(s['date'] as String);
+                          final isPast = slotDate.isBefore(DateTime.now().subtract(const Duration(days: 1)));
+
                           return Card(
                             color: Colors.white,
                             elevation: 1,
@@ -399,15 +402,30 @@ class _ServiceSlotManagementScreenState
                               side: BorderSide(color: Colors.grey[300]!, width: 1),
                             ),
                             child: ListTile(
-                              onLongPress: () => _showSlotSheet(slot: s),
+                              onLongPress: isPast ? null : () => _showSlotSheet(slot: s),
                               title: Text(
                                 'Slot ${i + 1} – $service',
-                                style: const TextStyle(fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: isPast ? Colors.grey[500] : null,
+                                ),
                               ),
                               subtitle: Text('${s['start_time']} - ${s['end_time']}'),
-                              trailing: Chip(
-                                label: Text(avail ? 'Available' : 'Booked'),
-                                backgroundColor: avail ? const Color(0xFFE7EDF3) : Colors.grey[300],
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (isPast)
+                                    Chip(
+                                      label: const Text('Past'),
+                                      backgroundColor: Colors.grey[400],
+                                      labelStyle: const TextStyle(color: Colors.white, fontSize: 10),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  Chip(
+                                    label: Text(avail ? 'Available' : 'Booked'),
+                                    backgroundColor: avail ? const Color(0xFFE7EDF3) : Colors.grey[300],
+                                  ),
+                                ],
                               ),
                             ),
                           );

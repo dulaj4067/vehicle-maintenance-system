@@ -5,6 +5,8 @@ import 'auth/register.dart';
 import 'admin/widgets/admin_nav.dart';
 import 'customer/widgets/customer_nav.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'admin/widgets/screens/CustomerRegistrationListScreen.dart';
+import 'admin/widgets/screens/VehicleRegistrationListScreen.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -73,6 +75,8 @@ GoRouter _buildRouter(String initialLocation) {
       GoRoute(path: '/admin', builder: (context, state) => AdminNav()),
       GoRoute(path: '/customer', builder: (context, state) => CustomerNav()),
       GoRoute(path: '/register', builder: (context, state) => const RegisterPage()),
+      GoRoute(path: '/admin/screens/customers',builder: (context, state) => const CustomerRegistrationListScreen()),
+      GoRoute(path: '/admin/screens/vehicles',builder: (context, state) => const VehicleRegistrationListScreen()),
     ],
   );
 }
