@@ -19,7 +19,8 @@ class RegistrationManagementScreen extends StatelessWidget {
           padding: const EdgeInsets.all(20.0),
           child: Column(
             children: [
-              const SizedBox(height: 30),
+              // Removed the huge SizedBox(height: 30)
+              const SizedBox(height: 12), // ← Only this small, decent gap
 
               // CUSTOMER REGISTRATION FIRST (Now at the top)
               _buildNavigationCard(
