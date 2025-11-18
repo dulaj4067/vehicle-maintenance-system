@@ -1,10 +1,8 @@
-// lib/admin/screens/vehicle_registration_list_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:photo_view/photo_view.dart'; // ADD THIS DEPENDENCY
+import 'package:photo_view/photo_view.dart';
 
 class VehicleRegistrationListScreen extends StatefulWidget {
   const VehicleRegistrationListScreen({super.key});

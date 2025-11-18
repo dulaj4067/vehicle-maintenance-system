@@ -1,4 +1,3 @@
-// lib/admin/screens/registration_management_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -74,6 +73,7 @@ class RegistrationManagementScreen extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 34,
+                // ignore: deprecated_member_use
                 backgroundColor: color.withOpacity(0.15),
                 child: Icon(icon, size: 38, color: color),
               ),

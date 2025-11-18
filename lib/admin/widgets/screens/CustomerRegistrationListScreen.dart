@@ -1,10 +1,8 @@
-// lib/admin/screens/customer_registration_list_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:photo_view/photo_view.dart'; // ADD THIS DEPENDENCY
+import 'package:photo_view/photo_view.dart';
 
 class CustomerRegistrationListScreen extends StatefulWidget {
   const CustomerRegistrationListScreen({super.key});
@@ -272,7 +270,7 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87), onPressed: () => context.pop()),
-        title: const Text('Pending Registrations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black87)),
+        title: const Text('Pending Customer Registrations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black87)),
         centerTitle: true,
       ),
       body: loading
@@ -289,6 +287,7 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
+                        // ignore: deprecated_member_use
                         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 8))],
                       ),
                       child: InkWell(
