@@ -1,4 +1,3 @@
-// lib/admin/screens/service_slot_management_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -249,6 +248,7 @@ class _ServiceSlotManagementScreenState
                             } catch (e) {
                               if (!mounted) return;
                               setStateSheet(() => saving = false);
+                              // ignore: use_build_context_synchronously
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Save failed: $e')),
                               );
@@ -306,6 +306,7 @@ class _ServiceSlotManagementScreenState
                           _scheduleLoad();
                         } catch (e) {
                           if (!mounted) return;
+                          // ignore: use_build_context_synchronously
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Delete failed: $e')),
                           );

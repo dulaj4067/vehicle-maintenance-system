@@ -1,4 +1,3 @@
-// lib/admin/widgets/AdminNav.dart   (or wherever you keep it)
 import 'package:flutter/material.dart';
 
 import 'admin_side_drawer.dart';
