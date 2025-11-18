@@ -100,10 +100,12 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
     if (rawDocs is Map && rawDocs.isNotEmpty) {
       // Handle both object and array formats
       if (rawDocs.containsKey('registration_doc_url')) {
-        if (rawDocs['registration_doc_url'] != null)
+        if (rawDocs['registration_doc_url'] != null) {
           documentList.add({'type': 'registration_doc', 's3_link': rawDocs['registration_doc_url']});
-        if (rawDocs['insurance_doc_url'] != null)
+        }
+        if (rawDocs['insurance_doc_url'] != null) {
           documentList.add({'type': 'insurance_doc', 's3_link': rawDocs['insurance_doc_url']});
+        }
       }
     }
 
