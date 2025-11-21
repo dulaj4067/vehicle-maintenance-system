@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,6 +25,21 @@ class _LoginPageState extends State<LoginPage> {
   static const String _cacheRoleKey = 'user_role';
   static const String _cacheStatusKey = 'user_status';
   static const String _cacheLastCheckKey = 'user_last_check';
+
+  Future<void> _saveFcmToken() async {
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        final userId = supabase.auth.currentUser!.id;
+        await supabase
+            .from('profiles')
+            .update({'fcm_token': fcmToken})
+            .eq('id', userId);
+      }
+    } catch (e) {
+      print('Error saving FCM token: $e');
+    }
+  }
 
   Future<void> _clearCache() async {
     final prefs = await SharedPreferences.getInstance();
@@ -98,13 +115,19 @@ class _LoginPageState extends State<LoginPage> {
         await supabase.auth.signOut();
         await _clearCache();
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account not accepted yet')),
-        );
+        Fluttertoast.showToast(
+        msg: 'Account not accepted yet',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.TOP,
+        backgroundColor: Colors.black,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
         return;
       }
 
       await _updateCache(role, status);
+      await _saveFcmToken();
 
       if (!mounted) return;
       context.go(role == 'admin' ? '/admin' : '/customer');
@@ -124,17 +147,27 @@ class _LoginPageState extends State<LoginPage> {
         setState(() => _emailError = 'Invalid email or password');
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
-        );
+        Fluttertoast.showToast(
+        msg: errorMsg,
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.TOP,
+        backgroundColor: Colors.black,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
       }
     } catch (e) {
       await _clearCache();
       final errorMsg = 'Login failed: ${e.toString()}';
       setState(() => _generalError = errorMsg);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An unexpected error occurred')),
+        Fluttertoast.showToast(
+          msg: 'An unexpected error occurred',
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.black,
+          textColor: Colors.white,
+          fontSize: 16.0,
         );
       }
     } finally {
@@ -217,9 +250,14 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextButton(
                   onPressed: () {
                     
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Forgot Password functionality coming soon')),
-                    );
+                    Fluttertoast.showToast(
+                    msg: 'Forgot Password functionality coming soon',
+                    toastLength: Toast.LENGTH_LONG,
+                    gravity: ToastGravity.TOP,
+                    backgroundColor: Colors.black,
+                    textColor: Colors.white,
+                    fontSize: 16.0,
+                  );
                   },
                   child: const Text('Forgot Password?'),
                 ),
