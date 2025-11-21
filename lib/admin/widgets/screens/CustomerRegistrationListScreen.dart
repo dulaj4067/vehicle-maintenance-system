@@ -46,7 +46,7 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
       if (!mounted) return;
       setState(() => loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading users: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -76,60 +76,34 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
     }
   }
 
-  // SMART OPEN WITH ERROR HANDLING
+  // SMART OPEN WITH BUCKET NAME FIX
   Future<void> _smartOpen(String url) async {
-    if (url.isEmpty || !url.contains('supabase.co')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid document link'), backgroundColor: Colors.orange),
-      );
-      return;
-    }
+    // FIX OLD BUCKET NAMES IN URL
+    String fixedUrl = url
+        .replaceAll('customer-documents', 'customer_documents')
+        .replaceAll('vehicle-documents', 'vehicle_documents');
 
-    final extension = url.split('.').last.toLowerCase().split('?').first;
+    final extension = fixedUrl.split('.').last.toLowerCase().split('?').first;
 
-    try {
-      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
-        if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => Scaffold(
-              backgroundColor: Colors.black,
-              appBar: AppBar(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                title: const Text('Document Preview'),
-              ),
-              body: PhotoView(
-                imageProvider: NetworkImage(url),
-                loadingBuilder: (context, event) => const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
-                errorBuilder: (_, __, ___) => Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.error_outline, size: 60, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text('Failed to load image', style: TextStyle(color: Colors.white70)),
-                    ],
-                  ),
-                ),
-              ),
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
+            body: PhotoView(
+              imageProvider: NetworkImage(fixedUrl),
+              loadingBuilder: (context, event) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+              errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.error, color: Colors.red, size: 60)),
             ),
           ),
-        );
-      } else {
-        final uri = Uri.parse(url);
-        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-          throw 'Could not open document';
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cannot open file: $e'), backgroundColor: Colors.red),
-        );
+        ),
+      );
+    } else {
+      if (!await launchUrl(Uri.parse(fixedUrl))) {
+        throw 'Could not launch $fixedUrl';
       }
     }
   }
@@ -137,16 +111,8 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
   void _showCustomerDetails(Map<String, dynamic> user) {
     List<Map<String, dynamic>> documentList = [];
     final rawDocs = user['documents'];
-
-    // Handle both array and old object format safely
     if (rawDocs is List && rawDocs.isNotEmpty) {
-      documentList = List<Map<String, dynamic>>.from(rawDocs);
-    } else if (rawDocs is Map && rawDocs.isNotEmpty) {
-      rawDocs.forEach((key, value) {
-        if (value is String && value.contains('supabase.co')) {
-          documentList.add({'type': key, 's3_link': value});
-        }
-      });
+      documentList = rawDocs.cast<Map<String, dynamic>>();
     }
 
     showModalBottomSheet(
@@ -165,42 +131,23 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
             controller: controller,
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
             children: [
-              Center(
-                child: Container(
-                  width: 50,
-                  height: 5,
-                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
+              Center(child: Container(width: 50, height: 5, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)))),
               const SizedBox(height: 20),
-              Text(
-                user['full_name'] ?? 'No Name',
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
+              Text(user['full_name'] ?? 'No Name', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
               const SizedBox(height: 24),
 
-              // Customer Info Card
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.person_outline, color: Color(0xFF1172D4), size: 24),
-                        SizedBox(width: 10),
-                        Text('Customer Details', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
+                    const Row(children: [Icon(Icons.person_outline, color: Color(0xFF1172D4), size: 24), SizedBox(width: 10), Text('Customer Details', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold))]),
                     const SizedBox(height: 16),
                     _infoRow(Icons.phone, user['phone'] ?? '—'),
                     const SizedBox(height: 10),
@@ -216,16 +163,19 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
               const SizedBox(height: 16),
 
               if (documentList.isEmpty)
-                const Center(
-                  child: Text('No documents uploaded', style: TextStyle(color: Colors.grey, fontSize: 15)),
-                )
+                const Center(child: Text('No documents uploaded', style: TextStyle(color: Colors.grey, fontSize: 15)))
               else
                 ...documentList.map((doc) {
-                  final String type = doc['type']?.toString() ?? 'document';
-                  final String url = doc['s3_link']?.toString() ?? doc.toString();
-                  if (url.isEmpty || !url.contains('http')) return const SizedBox();
+                  final String type = doc['type'] ?? 'document';
+                  final String url = doc['s3_link'] ?? '';
+                  if (url.isEmpty) return const SizedBox();
 
-                  return _buildDocumentCard(_formatDocType(type), url);
+                  // FINAL FIX FOR BUCKET NAME
+                  final String fixedUrl = url
+                      .replaceAll('customer-documents', 'customer_documents')
+                      .replaceAll('vehicle-documents', 'vehicle_documents');
+
+                  return _buildDocumentCard(_formatDocType(type), fixedUrl);
                 }),
 
               const SizedBox(height: 60),
@@ -243,13 +193,7 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
     );
   }
 
-  Widget _infoRow(IconData icon, String text) => Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 16.5))),
-        ],
-      );
+  Widget _infoRow(IconData icon, String text) => Row(children: [Icon(icon, size: 20, color: Colors.grey[600]), const SizedBox(width: 12), Text(text, style: const TextStyle(fontSize: 16.5))]);
 
   Widget _buildDocumentCard(String title, String url) {
     final extension = url.split('.').last.toLowerCase().split('?').first;
@@ -272,34 +216,18 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4))
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        leading: CircleAvatar(
-          backgroundColor: iconColor.withOpacity(0.12),
-          child: Icon(icon, color: iconColor, size: 28),
-        ),
+        leading: CircleAvatar(backgroundColor: iconColor.withOpacity(0.12), child: Icon(icon, color: iconColor, size: 28)),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(fileName, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-        ),
+        subtitle: Padding(padding: const EdgeInsets.only(top: 4), child: Text(fileName, style: TextStyle(color: Colors.grey[600], fontSize: 13))),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: const Icon(Icons.visibility, color: Colors.blue),
-              onPressed: () => _smartOpen(url),
-              tooltip: 'View',
-            ),
-            IconButton(
-              icon: const Icon(Icons.download, color: Colors.green),
-              onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
-              tooltip: 'Download',
-            ),
+            IconButton(icon: const Icon(Icons.visibility, color: Colors.blue), onPressed: () => _smartOpen(url), tooltip: 'View'),
+            IconButton(icon: const Icon(Icons.download, color: Colors.green), onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication), tooltip: 'Download'),
           ],
         ),
       ),
@@ -307,47 +235,24 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
   }
 
   Widget _rejectButton(Map<String, dynamic> user) => SizedBox(
-        height: 52,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red.shade600,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 6,
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-            _confirmAction(user['id'] as String, 'rejected', user);
-          },
-          child: const Text('Reject', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
-        ),
-      );
+    height: 52,
+    child: ElevatedButton(
+      style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 6),
+      onPressed: () { Navigator.pop(context); _confirmAction(user['id'] as String, 'rejected', user); },
+      child: const Text('Reject', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
+    ),
+  );
 
   Widget _approveButton(Map<String, dynamic> user) => SizedBox(
-        height: 52,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green.shade600,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 6,
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-            _confirmAction(user['id'] as String, 'approved', user);
-          },
-          child: const Text('Approve', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
-        ),
-      );
+    height: 52,
+    child: ElevatedButton(
+      style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade600, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 6),
+      onPressed: () { Navigator.pop(context); _confirmAction(user['id'] as String, 'approved', user); },
+      child: const Text('Approve', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
+    ),
+  );
 
-  String _formatDocType(String type) {
-    final map = {
-      'id_proof': 'ID Proof',
-      'selfie': 'Selfie Verification',
-      'address_proof': 'Address Proof',
-      'registration_doc': 'Vehicle Registration',
-      'insurance_doc': 'Insurance Document',
-    };
-    return map[type] ?? type.split('_').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ');
-  }
+  String _formatDocType(String type) => type.split('_').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ');
 
   void _confirmAction(String id, String status, Map<String, dynamic> user) {
     showDialog(
@@ -360,10 +265,7 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: status == 'approved' ? Colors.green : Colors.red),
-            onPressed: () {
-              Navigator.pop(context);
-              _updateStatus(id, status);
-            },
+            onPressed: () { Navigator.pop(context); _updateStatus(id, status); },
             child: Text(status == 'approved' ? 'Approve' : 'Reject', style: const TextStyle(color: Colors.white)),
           ),
         ],
@@ -378,10 +280,7 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
-          onPressed: () => context.pop(),
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87), onPressed: () => context.pop()),
         title: const Text('Pending Customer Registrations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black87)),
         centerTitle: true,
       ),
@@ -399,9 +298,7 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 8)),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 8))],
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(24),
@@ -410,12 +307,7 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
                           padding: const EdgeInsets.all(24),
                           child: Row(
                             children: [
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(color: const Color(0xFFF0F7FF), borderRadius: BorderRadius.circular(20)),
-                                child: const Icon(Icons.person_outline, size: 44, color: Color(0xFF1172D4)),
-                              ),
+                              Container(width: 80, height: 80, decoration: BoxDecoration(color: const Color(0xFFF0F7FF), borderRadius: BorderRadius.circular(20)), child: const Icon(Icons.person_outline, size: 44, color: Color(0xFF1172D4))),
                               const SizedBox(width: 20),
                               Expanded(
                                 child: Column(
