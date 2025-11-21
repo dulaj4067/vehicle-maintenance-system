@@ -1,5 +1,3 @@
-// lib/admin/screens/booking_request_management_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +11,7 @@ class BookingRequestManagementScreen extends StatefulWidget {
 
 class _BookingRequestManagementScreenState extends State<BookingRequestManagementScreen> {
   final supabase = Supabase.instance.client;
+
   List<Map<String, dynamic>> requests = [];
   bool loading = true;
 
@@ -24,6 +23,7 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
 
   Future<void> _loadPendingRequests() async {
     if (!mounted) return;
+
     setState(() => loading = true);
 
     try {
@@ -51,6 +51,7 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
           .order('created_at', ascending: false);
 
       if (!mounted) return;
+
       setState(() {
         requests = List<Map<String, dynamic>>.from(response);
         loading = false;
@@ -58,6 +59,7 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
     } catch (e) {
       if (!mounted) return;
       setState(() => loading = false);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: const Text('Failed to load requests'), backgroundColor: Colors.red),
       );
@@ -67,9 +69,11 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
   Future<void> _approveRequest(String requestId, Map<String, dynamic> slot) async {
     if (!(slot['is_available'] as bool? ?? false)) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This slot is no longer available'), backgroundColor: Colors.orange),
       );
+
       _loadPendingRequests();
       return;
     }
@@ -82,12 +86,15 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
       }).eq('id', requestId);
 
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Booking Confirmed Successfully!'), backgroundColor: Colors.green),
       );
+
       _loadPendingRequests();
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
@@ -141,20 +148,21 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
 
       if (!mounted) return;
 
-      // LIGHT RED SNACKBAR — FIXED const error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Request Rejected', style: TextStyle(fontWeight: FontWeight.w600)),
-          backgroundColor: Colors.red.shade100,  // Now works perfectly
+          backgroundColor: Colors.red.shade100,
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(20),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           duration: const Duration(seconds: 3),
         ),
       );
+
       _loadPendingRequests();
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
@@ -175,59 +183,131 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
         initialChildSize: 0.92,
         maxChildSize: 0.97,
         builder: (_, controller) => Container(
-          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
           child: ListView(
             controller: controller,
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
             children: [
-              Center(child: Container(width: 60, height: 6, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)))),
+              Center(
+                child: Container(
+                  width: 60,
+                  height: 6,
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
               const SizedBox(height: 24),
-              Text(profile['full_name'] ?? 'Customer', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-              Text(profile['phone'] ?? '', style: TextStyle(fontSize: 18, color: Colors.grey[700]), textAlign: TextAlign.center),
+
+              Text(
+                profile['full_name'] ?? 'Customer',
+                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                profile['phone'] ?? '',
+                style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+                textAlign: TextAlign.center,
+              ),
+
               const SizedBox(height: 32),
 
-              Card(color: Colors.white, elevation: 6, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), child: Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Row(children: [Icon(Icons.directions_car, color: Color(0xFF1172D4), size: 28), SizedBox(width: 12), Text('Vehicle', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))]),
-                const Divider(height: 32),
-                Text('${vehicle['make']} ${vehicle['model']} ${vehicle['year'] ?? ''}', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 6),
-                Text('Plate: ${vehicle['number_plate'] ?? '—'}', style: TextStyle(color: Colors.grey[700], fontSize: 16)),
-              ]))),
+              Card(
+                color: Colors.white,
+                elevation: 6,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.directions_car, color: Color(0xFF1172D4), size: 28),
+                        SizedBox(width: 12),
+                        Text('Vehicle', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))
+                      ],
+                    ),
+                    const Divider(height: 32),
+
+                    Text(
+                      '${vehicle['make']} ${vehicle['model']} ${vehicle['year'] ?? ''}',
+                      style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
+
+                    Text(
+                      'Plate: ${vehicle['number_plate'] ?? '—'}',
+                      style: TextStyle(color: Colors.grey[700], fontSize: 16),
+                    ),
+                  ]),
+                ),
+              ),
 
               const SizedBox(height: 24),
 
-              Card(color: Colors.white, elevation: 6, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), child: Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Row(children: [Icon(Icons.build_circle, color: Color(0xFF1172D4), size: 28), SizedBox(width: 12), Text('Service Request', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))]),
-                const Divider(height: 32),
-                _row('Type', (request['type'] as String?)?.toUpperCase() ?? 'UNKNOWN'),
-                _row('Requested', DateFormat('dd MMM yyyy, HH:mm').format(DateTime.parse(request['created_at'] as String))),
-                if (slot != null) ...[
-                  _row('Date', DateFormat('EEEE, dd MMMM yyyy').format(DateTime.parse(slot['date'] as String))),
-                  _row('Time', '${slot['start_time'].toString().substring(0,5)} - ${slot['end_time'].toString().substring(0,5)}'),
-                  _row('Status', isAvailable ? 'Available' : 'Booked', color: isAvailable ? Colors.green : Colors.red),
-                ],
-                const SizedBox(height: 16),
-                const Text('Description:', style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                Text(request['description']?.toString() ?? 'No description', style: const TextStyle(fontSize: 16)),
-              ]))),
+              Card(
+                color: Colors.white,
+                elevation: 6,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.build_circle, color: Color(0xFF1172D4), size: 28),
+                        SizedBox(width: 12),
+                        Text('Service Request', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))
+                      ],
+                    ),
+                    const Divider(height: 32),
+
+                    _row('Type', (request['type'] as String?)?.toUpperCase() ?? 'UNKNOWN'),
+                    _row('Requested', DateFormat('dd MMM yyyy, HH:mm').format(DateTime.parse(request['created_at']))),
+
+                    if (slot != null) ...[
+                      _row('Date', DateFormat('EEEE, dd MMMM yyyy').format(DateTime.parse(slot['date']))),
+                      _row('Time', '${slot['start_time'].toString().substring(0, 5)} - ${slot['end_time'].toString().substring(0, 5)}'),
+                      _row('Status', isAvailable ? 'Available' : 'Booked', color: isAvailable ? Colors.green : Colors.red),
+                    ],
+
+                    const SizedBox(height: 16),
+                    const Text('Description:', style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    Text(request['description'] ?? 'No description', style: const TextStyle(fontSize: 16)),
+                  ]),
+                ),
+              ),
 
               const SizedBox(height: 40),
+
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600, padding: const EdgeInsets.all(18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      onPressed: () { Navigator.pop(context); _rejectRequest(request['id'] as String, request['description']?.toString() ?? ''); },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade600,
+                        padding: const EdgeInsets.all(18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _rejectRequest(request['id'], request['description'] ?? '');
+                      },
                       child: const Text('Reject Request', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                     ),
                   ),
                   const SizedBox(width: 16),
+
                   Expanded(
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: isAvailable ? const Color(0xFF1172D4) : Colors.grey, padding: const EdgeInsets.all(18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      onPressed: isAvailable ? () { Navigator.pop(context); _approveRequest(request['id'] as String, slot!); } : null,
-                      child: Text(isAvailable ? 'Confirm Booking' : 'Slot Taken', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isAvailable ? const Color(0xFF1172D4) : Colors.grey,
+                        padding: const EdgeInsets.all(18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      onPressed: isAvailable ? () { Navigator.pop(context); _approveRequest(request['id'], slot!); } : null,
+                      child: Text(isAvailable ? 'Confirm Booking' : 'Slot Taken',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                     ),
                   ),
                 ],
@@ -260,15 +340,20 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
         child: loading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF1172D4)))
             : requests.isEmpty
-                ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.inbox_outlined, size: 80, color: Colors.grey), SizedBox(height: 16), Text('No pending requests', style: TextStyle(fontSize: 18, color: Colors.grey))]))
+                ? const Center(
+                    child: Text(
+                      'No pending requests',
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.all(20),
                     itemCount: requests.length,
                     itemBuilder: (_, i) {
                       final r = requests[i];
-                      final p = r['profile'] as Map<String, dynamic>;
-                      final v = r['vehicle'] as Map<String, dynamic>;
-                      final s = r['suggested_slot'] as Map<String, dynamic>?;
+                      final p = r['profile'];
+                      final v = r['vehicle'];
+                      final s = r['suggested_slot'];
 
                       return Card(
                         color: Colors.white,
@@ -282,19 +367,60 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
                             padding: const EdgeInsets.all(24),
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Row(children: [
-                                CircleAvatar(radius: 30, backgroundColor: const Color(0xFFF0F7FF), child: const Icon(Icons.person, color: Color(0xFF1172D4))),
+                                CircleAvatar(
+                                  radius: 30,
+                                  backgroundColor: const Color(0xFFF0F7FF),
+                                  child: const Icon(Icons.person, color: Color(0xFF1172D4)),
+                                ),
                                 const SizedBox(width: 16),
-                                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text(p['full_name'] ?? 'Customer', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                                  Text(p['phone'] ?? '', style: TextStyle(color: Colors.grey[600], fontSize: 15)),
-                                ])),
-                                Chip(backgroundColor: Colors.orange.shade50, label: Text((r['type'] as String?)?.toUpperCase() ?? 'SERVICE', style: TextStyle(color: Colors.orange.shade800, fontWeight: FontWeight.bold))),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(p['full_name'] ?? 'Customer',
+                                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                      Text(p['phone'] ?? '',
+                                          style: TextStyle(color: Colors.grey[600], fontSize: 15)),
+                                    ],
+                                  ),
+                                ),
+                                Chip(
+                                  backgroundColor: Colors.orange.shade50,
+                                  label: Text(
+                                    (r['type'] as String?)?.toUpperCase() ?? 'SERVICE',
+                                    style: TextStyle(
+                                        color: Colors.orange.shade800, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
                               ]),
+
                               const SizedBox(height: 16),
-                              Row(children: [const Icon(Icons.directions_car, size: 20), const SizedBox(width: 8), Text('${v['make']} ${v['model']} • ${v['number_plate']}')]),
-                              if (s != null) ...[const SizedBox(height: 10), Row(children: [const Icon(Icons.calendar_today, size: 20), const SizedBox(width: 8), Text('${DateFormat('dd MMM yyyy').format(DateTime.parse(s['date']))} • ${s['start_time'].substring(0,5)} - ${s['end_time'].substring(0,5)}')])],
+
+                              Row(children: [
+                                const Icon(Icons.directions_car, size: 20),
+                                const SizedBox(width: 8),
+                                Text('${v['make']} ${v['model']} • ${v['number_plate']}')
+                              ]),
+
+                              if (s != null) ...[
+                                const SizedBox(height: 10),
+                                Row(children: [
+                                  const Icon(Icons.calendar_today, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                      '${DateFormat('dd MMM yyyy').format(DateTime.parse(s['date']))} • '
+                                      '${s['start_time'].substring(0, 5)} - ${s['end_time'].substring(0, 5)}')
+                                ]),
+                              ],
+
                               const SizedBox(height: 12),
-                              Text(r['description'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey[700])),
+
+                              Text(
+                                r['description'] ?? '',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(color: Colors.grey[700]),
+                              ),
                             ]),
                           ),
                         ),
