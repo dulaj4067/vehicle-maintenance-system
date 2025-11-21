@@ -51,7 +51,7 @@ class _AdminSettingsState extends State<AdminSettings> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        backgroundColor: const Color(0xFF1172D4), // matches your admin theme
+        backgroundColor: const Color(0xFF1172D4), 
         foregroundColor: Colors.white,
       ),
       body: Center(
