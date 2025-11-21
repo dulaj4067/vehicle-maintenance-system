@@ -7,6 +7,7 @@ import 'customer/widgets/customer_nav.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'admin/widgets/screens/CustomerRegistrationListScreen.dart';
 import 'admin/widgets/screens/VehicleRegistrationListScreen.dart';
+import 'theme_color.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -35,6 +36,7 @@ Future<GoRouter> getRouter() async {
       cachedRole != null &&
       now - lastCheck < _cacheExpiration.inMilliseconds) {
     final initialRoute = cachedRole == 'admin' ? '/admin' : '/customer';
+    await ThemeColorManager.setColor();
     return _buildRouter(initialRoute);
   }
 
@@ -63,6 +65,7 @@ Future<GoRouter> getRouter() async {
   }
 
   final initialRoute = role == 'admin' ? '/admin' : '/customer';
+  await ThemeColorManager.setColor();
 
   return _buildRouter(initialRoute);
 }

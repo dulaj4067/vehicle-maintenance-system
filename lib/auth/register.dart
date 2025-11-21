@@ -7,6 +7,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -37,6 +40,43 @@ class _RegisterPageState extends State<RegisterPage> {
   static const String _cacheRoleKey = 'user_role';
   static const String _cacheStatusKey = 'user_status';
   static const String _cacheLastCheckKey = 'user_last_check';
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAndRequestPermission();
+  }
+
+Future<void> _saveFcmToken() async {
+  try {
+    final fcmToken = await FirebaseMessaging.instance.getToken();
+    if (fcmToken != null) {
+      final userId = supabase.auth.currentUser!.id;
+
+      await supabase
+          .from('profiles')
+          .update({'fcm_token': fcmToken})
+          .eq('id', userId);
+    }
+  } catch (e) {
+    print('Error saving FCM token during registration: $e');
+  }
+}
+
+  Future<void> _checkAndRequestPermission() async {
+    if (Platform.isAndroid) {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      final isAndroid13OrHigher = androidInfo.version.sdkInt >= 33;
+      
+      final permission = isAndroid13OrHigher ? Permission.photos : Permission.storage;
+      
+      if (await permission.isDenied) {
+        await permission.request();
+      }
+    } else if (Platform.isIOS) {
+      await Permission.photos.request();
+    }
+  }
 
   Future<void> _clearCache() async {
     final prefs = await SharedPreferences.getInstance();
@@ -119,28 +159,36 @@ class _RegisterPageState extends State<RegisterPage> {
     });
   }
 
-  Future<bool> _requestStoragePermission() async {
-    var status = await Permission.storage.status;
+  Future<bool> _ensurePermissionGranted() async {
     if (Platform.isAndroid) {
-      status = await Permission.photos.status;
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      final isAndroid13OrHigher = androidInfo.version.sdkInt >= 33;
+
+      final permission = isAndroid13OrHigher ? Permission.photos : Permission.storage;
+      var status = await permission.status;
+
+      if (status.isGranted) {
+        return true;
+      }
+
+      if (status.isDenied || status.isPermanentlyDenied) {
+        final result = await permission.request();
+        if (result.isGranted) {
+          return true;
+        }
+        
+        if (mounted) {
+          await _showPermissionDialog();
+        }
+        return false;
+      }
     } else if (Platform.isIOS) {
-      status = await Permission.photos.status;
+       var status = await Permission.photos.status;
+       if (status.isGranted) return true;
+       final result = await Permission.photos.request();
+       return result.isGranted;
     }
-
-    if (status.isDenied) {
-      final result = await (Platform.isAndroid
-              ? Permission.photos
-              : Permission.photos)
-          .request();
-      return result.isGranted;
-    }
-
-    if (status.isPermanentlyDenied) {
-      await _showPermissionDialog();
-      return false;
-    }
-
-    return status.isGranted;
+    return true;
   }
 
   Future<void> _showPermissionDialog() async {
@@ -171,13 +219,17 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> pickFile() async {
-    final hasPermission = await _requestStoragePermission();
+    final hasPermission = await _ensurePermissionGranted();
     if (!hasPermission) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Storage permission is required to pick files.')),
-      );
+      Fluttertoast.showToast(
+      msg: 'Storage permission is required to pick files.',
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.TOP,
+      backgroundColor: Colors.black,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
       return;
     }
 
@@ -194,16 +246,26 @@ class _RegisterPageState extends State<RegisterPage> {
         });
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No file selected')),
-          );
+          Fluttertoast.showToast(
+          msg: 'No file selected',
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.black,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('File picker error: $e')),
-        );
+        Fluttertoast.showToast(
+        msg: 'File picker error: $e',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.TOP,
+        backgroundColor: Colors.black,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
       }
     }
   }
@@ -245,9 +307,14 @@ class _RegisterPageState extends State<RegisterPage> {
       await _performRegistration();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An unexpected error occurred: $e')),
-        );
+        Fluttertoast.showToast(
+        msg: 'An unexpected error occurred: $e',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.TOP,
+        backgroundColor: Colors.black,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
       }
     } finally {
       if (mounted) {
@@ -276,20 +343,30 @@ class _RegisterPageState extends State<RegisterPage> {
           _phoneError = 'Phone number already registered';
         });
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Phone number already in use')),
-          );
+          Fluttertoast.showToast(
+          msg: 'Phone number already in use',
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.black,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
         }
-        return false; // Stop!
+        return false; 
       }
     } catch (e) {
       setState(() {
         _phoneError = 'Error checking phone number';
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error checking phone: $e')),
-        );
+        Fluttertoast.showToast(
+        msg: 'Error checking phone: $e',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.TOP,
+        backgroundColor: Colors.black,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
       }
       return false; // Stop!
     }
@@ -329,6 +406,8 @@ class _RegisterPageState extends State<RegisterPage> {
         if (documents.isNotEmpty) 'documents': documents,
       });
 
+      await _saveFcmToken();
+
       if (!mounted) return;
       await _showSuccessDialog();
     } on AuthException catch (e) {
@@ -349,9 +428,14 @@ class _RegisterPageState extends State<RegisterPage> {
             () => _emailError = 'Registration failed. Please try again.');
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
-        );
+        Fluttertoast.showToast(
+        msg: errorMsg,
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.TOP,
+        backgroundColor: Colors.black,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
       }
     } catch (e) {
       if (user != null) {
@@ -583,7 +667,7 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => context.go('/login'),
-                child: const Text('Already 55 have an account? Login'),
+                child: const Text('Already have an account? Login'),
               ),
             ],
           ),

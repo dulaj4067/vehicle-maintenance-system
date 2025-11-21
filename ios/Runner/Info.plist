@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPermissionDescription</key>
+	<string>We need notifications to send you alerts and updates.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+    <string>We need access to your photo library to upload profile documents and images.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>We need access to save downloaded documents to your photo library.</string> 
+    <key>NSPermissionDescription</key>
+    <string>We need notifications to send you alerts and status updates.</string>
 </dict>
 </plist>

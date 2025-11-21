@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../theme_color.dart'; 
 
 class NoGlowScrollBehavior extends ScrollBehavior {
   @override
@@ -39,7 +40,7 @@ class _CustomerHomeState extends State<CustomerHome> {
     {
       'level': 'silver',
       'title': 'Silver',
-      'color': Colors.grey.shade700,
+      'color': ThemeColorManager.getSafeColor(),
       'subtitle': 'Earn points on every service',
       'icon': FontAwesomeIcons.solidStar,
     },
@@ -128,7 +129,7 @@ class _CustomerHomeState extends State<CustomerHome> {
         final DateTime created = DateTime.parse(s['created_at']);
         final int daysAgo = now.difference(created).inDays;
         String subtitle;
-        Color iconColor = Colors.black;
+        Color iconColor = ThemeColorManager.getColor();
         if (daysAgo > 30) {
           subtitle = 'Overdue';
           iconColor = Colors.red;
@@ -188,11 +189,11 @@ class _CustomerHomeState extends State<CustomerHome> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
+      return  Scaffold(
+        backgroundColor:ThemeColorManager.getColor(),
         body: Center(
           child: CircularProgressIndicator(
-            color: Colors.black,
+            color: ThemeColorManager.getSafeColor(),
           ),
         ),
       );
@@ -209,10 +210,10 @@ class _CustomerHomeState extends State<CustomerHome> {
     return ScrollConfiguration(
       behavior: NoGlowScrollBehavior(),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: ThemeColorManager.getColor(),
         appBar: AppBar(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
+          backgroundColor: ThemeColorManager.getColor(),
+          surfaceTintColor: ThemeColorManager.getColor(),
           elevation: 0,
           systemOverlayStyle: const SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
@@ -223,10 +224,10 @@ class _CustomerHomeState extends State<CustomerHome> {
             padding: const EdgeInsets.only(top: 10),
             child: Text(
               'Hello, $fullName!',
-              style: const TextStyle(
+              style:  TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: ThemeColorManager.getSafeColor(),
               ),
             ),
           ),
@@ -234,15 +235,15 @@ class _CustomerHomeState extends State<CustomerHome> {
             preferredSize: Size.fromHeight(1),
             child: Container(
               margin: EdgeInsets.symmetric(horizontal: 10),
-              color: Colors.black,
+              color: ThemeColorManager.getSafeColor(),
               height: 0.5,
             ),
           ),
         ),
         body: RefreshIndicator(
           onRefresh: _loadData,
-          color: Colors.black,
-          backgroundColor: Colors.white,
+          color: ThemeColorManager.getSafeColor(),
+          backgroundColor: ThemeColorManager.getColor(),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 14.0),
@@ -253,12 +254,12 @@ class _CustomerHomeState extends State<CustomerHome> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                     Text(
                       'Offers',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: ThemeColorManager.getSafeColor(),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -267,10 +268,10 @@ class _CustomerHomeState extends State<CustomerHome> {
                       child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: ThemeColorManager.getColor(),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.grey.shade300,
+                          color: ThemeColorManager.getSafeColor(),
                           width: 1,
                         ),
                       ),
@@ -278,17 +279,17 @@ class _CustomerHomeState extends State<CustomerHome> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const FaIcon(
+                           FaIcon(
                             FontAwesomeIcons.tag,
                             size: 48,
-                            color: Colors.grey,
+                            color: ThemeColorManager.getSafeColor(),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'No offers available at the moment.',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey[600],
+                              color: ThemeColorManager.getSafeColor(),
                             ),
                           ),
                         ],
@@ -335,7 +336,7 @@ class _CustomerHomeState extends State<CustomerHome> {
                                     decoration: BoxDecoration(
                                       color: currentIndex == index
                                           ? const Color.fromARGB(255, 0, 0, 0)
-                                          : Colors.grey.shade300,
+                                          : ThemeColorManager.getSafeColor(),
                                       borderRadius:
                                           BorderRadius.circular(3),
                                     ),
@@ -351,12 +352,12 @@ class _CustomerHomeState extends State<CustomerHome> {
                 const SizedBox(height: 24),
                 _buildDivider(),
                 const SizedBox(height: 16),
-                const Text(
+                 Text(
                   'Membership',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: ThemeColorManager.getSafeColor(),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -375,7 +376,7 @@ class _CustomerHomeState extends State<CustomerHome> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
@@ -383,7 +384,7 @@ class _CustomerHomeState extends State<CustomerHome> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                            color: ThemeColorManager.getSafeColor(),
                           ),
                         ),
                         Spacer(),
@@ -392,10 +393,14 @@ class _CustomerHomeState extends State<CustomerHome> {
                     const SizedBox(height: 12),
                     Card(
                       elevation: 0,
-                      color: Colors.white,
-                      surfaceTintColor: Colors.white,
+                      color: ThemeColorManager.getColor(),
+                      surfaceTintColor: ThemeColorManager.getColor(),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: ThemeColorManager.getSafeColor(),
+                          width: 1,           
+                        ),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: serviceData.isEmpty
@@ -403,9 +408,9 @@ class _CustomerHomeState extends State<CustomerHome> {
                             child: Container(
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: ThemeColorManager.getColor(),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.grey.shade300),
+                                border: Border.all(color: ThemeColorManager.getColor()),
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(20),
@@ -413,18 +418,18 @@ class _CustomerHomeState extends State<CustomerHome> {
                                   mainAxisSize: MainAxisSize.min,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: const [
+                                  children:  [
                                     FaIcon(
                                       FontAwesomeIcons.clipboardList,
                                       size: 48,
-                                      color: Colors.grey,
+                                      color: ThemeColorManager.getSafeColor(),
                                     ),
                                     SizedBox(height: 12),
                                     Text(
                                       'No pending services.',
                                       style: TextStyle(
                                         fontSize: 16,
-                                        color: Colors.grey,
+                                        color: ThemeColorManager.getSafeColor(),
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -480,8 +485,8 @@ class _CustomerHomeState extends State<CustomerHome> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
+          backgroundColor: ThemeColorManager.getColor(),
+          surfaceTintColor: ThemeColorManager.getColor(),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -491,9 +496,9 @@ class _CustomerHomeState extends State<CustomerHome> {
               const SizedBox(width: 10),
               Text(
                 title,
-                style: const TextStyle(
+                style:  TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: ThemeColorManager.getSafeColor(),
                 ),
               ),
             ],
@@ -502,19 +507,19 @@ class _CustomerHomeState extends State<CustomerHome> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+               Text(
                 'Status',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Colors.black,
+                  color: ThemeColorManager.getSafeColor(),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
                 style: TextStyle(
-                  color: isOverdue ? Colors.red.shade400 : Colors.grey.shade700,
+                  color: isOverdue ? Colors.red.shade400 : ThemeColorManager.getSafeColor(),
                   fontWeight:
                       isOverdue ? FontWeight.bold : FontWeight.normal,
                   fontSize: 15,
@@ -522,56 +527,56 @@ class _CustomerHomeState extends State<CustomerHome> {
               ),
               if (vehicle != null) ...[
                 const SizedBox(height: 16),
-                const Text(
+                 Text(
                   'Vehicle',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Colors.black,
+                    color: ThemeColorManager.getSafeColor(),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${vehicle['make']} ${vehicle['model']} (${vehicle['year']})',
-                  style: const TextStyle(
-                    color: Colors.grey,
+                  style:  TextStyle(
+                    color: ThemeColorManager.getSafeColor(),
                     fontSize: 15,
                   ),
                 ),
               ],
               if (description.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                const Text(
+                 Text(
                   'Description',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Colors.black,
+                    color: ThemeColorManager.getSafeColor(),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: const TextStyle(
-                    color: Colors.grey,
+                  style:  TextStyle(
+                    color: ThemeColorManager.getSafeColor(),
                     fontSize: 15,
                   ),
                 ),
               ],
               const SizedBox(height: 16),
-              const Text(
+               Text(
                 'Details',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Colors.black,
+                  color: ThemeColorManager.getSafeColor(),
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
+               Text(
                 'This service for your vehicle is pending. Please book an appointment at your earliest convenience to keep your car in top condition.',
                 style: TextStyle(
-                  color: Colors.grey,
+                  color: ThemeColorManager.getSafeColor(),
                   fontSize: 15,
                 ),
               ),
@@ -606,12 +611,12 @@ class _CustomerHomeState extends State<CustomerHome> {
   ) {
     return Card(
       elevation: 0,
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
+      color: ThemeColorManager.getColor(),
+      surfaceTintColor: ThemeColorManager.getColor(),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isCurrent ? color : Colors.grey.shade300,
+          color: isCurrent ? color : ThemeColorManager.getSafeColor(),
           width: isCurrent ? 2 : 1,
         ),
       ),
@@ -647,22 +652,31 @@ class _CustomerHomeState extends State<CustomerHome> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade700,
+                      color: ThemeColorManager.getSafeColor(),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  LinearProgressIndicator(
-                    value: points / 100.0,
-                    minHeight: 8,
-                    backgroundColor: Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation<Color>(color.withValues()),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.grey, width: 2),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: points / 100.0,
+                        minHeight: 8,
+                        backgroundColor: ThemeColorManager.getColor(),
+                        valueColor: AlwaysStoppedAnimation(color.withValues()),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '$points / 100 points',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.shade600,
+                      color: ThemeColorManager.getSafeColor(),
                     ),
                   ),
                 ],
@@ -677,7 +691,7 @@ class _CustomerHomeState extends State<CustomerHome> {
   Widget _buildDivider() {
     return Container(
       height: 1,
-      color: Colors.grey.shade300,
+      color: ThemeColorManager.getSafeColor(),
     );
   }
 
@@ -693,7 +707,7 @@ class _CustomerHomeState extends State<CustomerHome> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: Colors.grey.shade300,
+            color: ThemeColorManager.getSafeColor(),
             width: 1,
           ),
         ),
@@ -719,11 +733,11 @@ class _CustomerHomeState extends State<CustomerHome> {
                 },
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
-                    color: Colors.grey.shade100,
-                    child: const Center(
+                    color: ThemeColorManager.getSafeColor(),
+                    child:  Center(
                       child: FaIcon(
                         FontAwesomeIcons.image,
-                        color: Colors.grey,
+                        color: ThemeColorManager.getSafeColor(),
                         size: 40,
                       ),
                     ),
@@ -753,22 +767,22 @@ class _CustomerHomeState extends State<CustomerHome> {
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style:  TextStyle(
           fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          color: ThemeColorManager.getSafeColor(),
         ),
       ),
       subtitle: Text(
         subtitle,
         style: TextStyle(
-          color: isOverdue ? Colors.red.shade400 : Colors.grey.shade600,
+          color: isOverdue ? Colors.red.shade400 : ThemeColorManager.getSafeColor(),
           fontWeight: isOverdue ? FontWeight.bold : FontWeight.w500,
         ),
       ),
-      trailing: const FaIcon(
+      trailing:  FaIcon(
         FontAwesomeIcons.arrowRight,
         size: 16,
-        color: Colors.grey,
+        color: ThemeColorManager.getSafeColor(),
       ),
       onTap: () {
         _showServiceDetailsDialog(

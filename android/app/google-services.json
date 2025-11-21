@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "660174456184",
+    "project_id": "vehicle-app-notifications",
+    "storage_bucket": "vehicle-app-notifications.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:660174456184:android:d045d7df0c964ea21b748d",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7ngaLOWYzjOC7p502TAphuR-ZtZMZ4n0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

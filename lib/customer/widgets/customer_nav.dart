@@ -5,6 +5,7 @@ import 'customer_bookings.dart';
 import 'customer_profile.dart';
 import 'customer_settings.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../theme_color.dart'; 
 
 class CustomerNav extends StatefulWidget {
   const CustomerNav({super.key});
@@ -32,7 +33,7 @@ class _CustomerNavState extends State<CustomerNav> {
         highlightColor: Colors.transparent,
       ),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: ThemeColorManager.getColor(),
         body: IndexedStack(
           index: _currentIndex,
           children: _pages,
@@ -40,20 +41,20 @@ class _CustomerNavState extends State<CustomerNav> {
         bottomNavigationBar: Padding(
           padding: const EdgeInsets.only(bottom: 8.0),
           child: Container(
-            decoration: const BoxDecoration(
+            decoration:  BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: Colors.grey,
+                  color: ThemeColorManager.getSafeColor(),
                   width: 0.7,
                 ),
               ),
             ),
             child: BottomNavigationBar(
               type: BottomNavigationBarType.fixed,
-              backgroundColor: Colors.white,
+              backgroundColor: ThemeColorManager.getColor(),
               elevation: 0,
-              selectedItemColor: Colors.black,
-              unselectedItemColor: Colors.grey,
+              selectedItemColor: ThemeColorManager.getSafeColor(),
+              unselectedItemColor: Colors.grey.shade600,
               selectedFontSize: 12,
               unselectedFontSize: 12,
               showSelectedLabels: true,
@@ -62,35 +63,35 @@ class _CustomerNavState extends State<CustomerNav> {
               unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
               currentIndex: _currentIndex,
               onTap: (index) => setState(() => _currentIndex = index),
-              items: const [
+              items:  [
                 BottomNavigationBarItem(
                   icon: FaIcon(FontAwesomeIcons.house, size: 18),
                   activeIcon: FaIcon(FontAwesomeIcons.solidHouse,
-                      size: 18, color: Colors.black),
+                      size: 18, color: ThemeColorManager.getSafeColor()),
                   label: 'Home',
                 ),
                 BottomNavigationBarItem(
                   icon: FaIcon(FontAwesomeIcons.car, size: 18),
                   activeIcon:
-                      FaIcon(FontAwesomeIcons.car, size: 18, color: Colors.black),
+                      FaIcon(FontAwesomeIcons.car, size: 18, color: ThemeColorManager.getSafeColor()),
                   label: 'Vehicles',
                 ),
                 BottomNavigationBarItem(
                   icon: FaIcon(FontAwesomeIcons.calendar, size: 18),
                   activeIcon: FaIcon(FontAwesomeIcons.solidCalendar,
-                      size: 18, color: Colors.black),
+                      size: 18, color: ThemeColorManager.getSafeColor()),
                   label: 'Bookings',
                 ),
                 BottomNavigationBarItem(
                   icon: FaIcon(FontAwesomeIcons.user, size: 18),
                   activeIcon: FaIcon(FontAwesomeIcons.solidUser,
-                      size: 18, color: Colors.black),
+                      size: 18, color: ThemeColorManager.getSafeColor()),
                   label: 'Profile',
                 ),
                 BottomNavigationBarItem(
                   icon: FaIcon(FontAwesomeIcons.gear, size: 18),
                   activeIcon:
-                      FaIcon(FontAwesomeIcons.gear, size: 18, color: Colors.black),
+                      FaIcon(FontAwesomeIcons.gear, size: 18, color: ThemeColorManager.getSafeColor()),
                   label: 'Settings',
                 ),
               ],
