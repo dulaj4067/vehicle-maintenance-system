@@ -289,15 +289,19 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
   void _confirm(String status, Map v) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('${status == 'approved' ? 'Approve' : 'Reject'} Vehicle?'),
         content: Text('${v['make']} ${v['model']} ${v['year']}\nPlate: ${v['number_plate']}\nOwner: ${v['owner_full_name']}'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF1172D4))),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: status == 'approved' ? Colors.green : Colors.red),
-            onPressed: () { Navigator.pop(context); _updateStatus(v['id'], status); },
+            onPressed: () { Navigator.pop(dialogContext); _updateStatus(v['id'], status); },
             child: Text(status == 'approved' ? 'Approve' : 'Reject', style: const TextStyle(color: Colors.white)),
           ),
         ],

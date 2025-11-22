@@ -256,11 +256,15 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('${status == 'approved' ? 'Approve' : 'Reject'} Customer?'),
         content: Text('Name: ${user['full_name']}\nPhone: ${user['phone']}'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context), 
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF1172D4))),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: status == 'approved' ? Colors.green : Colors.red),
             onPressed: () { Navigator.pop(context); _updateStatus(id, status); },

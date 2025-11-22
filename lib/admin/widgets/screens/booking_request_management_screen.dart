@@ -102,13 +102,40 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
     );
   }
 
+  String _formatTo12Hour(String time24) {
+    final parts = time24.split(':');
+    int hour = int.parse(parts[0]);
+    final minute = parts[1];
+    final period = hour >= 12 ? 'PM' : 'AM';
+    hour = hour == 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return '$hour:$minute $period';
+  }
+
   Future<void> _suggestNewSlot(String requestId, Map<String, dynamic> request) async {
+    final pickerContext = context;
+    if (!mounted) return;
+    
     final selectedDate = await showDatePicker(
-      context: context,
+      context: pickerContext,
       initialDate: DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 90)),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF1172D4),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black87,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
     );
+    
     if (selectedDate == null || !mounted) return;
 
     final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
@@ -126,9 +153,13 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
       return;
     }
 
+    final dialogContext = context;
+    if (!mounted) return;
+    
     final selectedSlot = await showDialog<Map<String, dynamic>?>(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: dialogContext,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Suggest Alternative Slot'),
         content: SizedBox(
           width: double.maxFinite,
@@ -137,13 +168,13 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
             itemCount: slots.length,
             itemBuilder: (context, index) {
               final slot = slots[index];
-              final start = slot['start_time'].toString().substring(0, 5);
-              final end = slot['end_time'].toString().substring(0, 5);
+              final start = _formatTo12Hour(slot['start_time'].toString().substring(0, 5));
+              final end = _formatTo12Hour(slot['end_time'].toString().substring(0, 5));
               return ListTile(
                 title: Text('$start - $end'),
                 subtitle: Text(DateFormat('EEEE, dd MMM yyyy').format(selectedDate)),
                 trailing: const Icon(Icons.check_circle, color: Colors.green),
-                onTap: () => Navigator.pop(context, slot),
+                onTap: () => Navigator.pop(ctx, slot),
               );
             },
           ),
@@ -162,7 +193,7 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
       'profile_id': request['profile']['id'],
       'type': 'offer',
       'title': 'New Time Suggested',
-      'message': 'Admin suggested: ${selectedSlot['start_time'].substring(0, 5)} on ${DateFormat('dd MMM yyyy').format(selectedDate)}',
+      'message': 'Admin suggested: ${_formatTo12Hour(selectedSlot['start_time'].substring(0, 5))} on ${DateFormat('dd MMM yyyy').format(selectedDate)}',
       'related_id': requestId,
     });
 
@@ -205,9 +236,13 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
 
   Future<void> _rejectRequest(String requestId, String currentDesc) async {
     final reasonCtrl = TextEditingController();
+    final dialogContext = context;
+    if (!mounted) return;
+    
     final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: dialogContext,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Reject Request'),
         content: TextField(
           controller: reasonCtrl,
@@ -215,11 +250,14 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
           maxLines: 3,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF1172D4))),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Reject'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Reject', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -244,17 +282,24 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
   }
 
   Future<void> _cancelConfirmedRequest(String requestId) async {
+    final dialogContext = context;
+    if (!mounted) return;
+    
     final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: dialogContext,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Cancel Appointment'),
         content: const Text('This will free the time slot. Continue?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('No')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('No', style: TextStyle(color: Color(0xFF1172D4))),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Yes, Cancel'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -329,9 +374,9 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
                     const Text('Request Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const Divider(height: 24, thickness: 1),
                     _buildDetailRow('Type', (request['type'] as String).toUpperCase()),
-                    if (customerSlot != null) _buildDetailRow('Customer Selected', '${customerSlot['date']} • ${customerSlot['start_time'].substring(0,5)}-${customerSlot['end_time'].substring(0,5)}', color: Colors.blue.shade700),
-                    if (suggestedSlot != null) _buildDetailRow('Admin Suggested', '${suggestedSlot['date']} • ${suggestedSlot['start_time'].substring(0,5)}-${suggestedSlot['end_time'].substring(0,5)}', color: suggestedSlot['is_available'] ? Colors.green : Colors.red),
-                    if (confirmedSlot != null) _buildDetailRow('Confirmed Slot', '${confirmedSlot['date']} • ${confirmedSlot['start_time'].substring(0,5)}-${confirmedSlot['end_time'].substring(0,5)}', color: Colors.green.shade700),
+                    if (customerSlot != null) _buildDetailRow('Customer Selected', '${customerSlot['date']} • ${_formatTo12Hour(customerSlot['start_time'].substring(0,5))}-${_formatTo12Hour(customerSlot['end_time'].substring(0,5))}', color: Colors.blue.shade700),
+                    if (suggestedSlot != null) _buildDetailRow('Admin Suggested', '${suggestedSlot['date']} • ${_formatTo12Hour(suggestedSlot['start_time'].substring(0,5))}-${_formatTo12Hour(suggestedSlot['end_time'].substring(0,5))}', color: suggestedSlot['is_available'] ? Colors.green : Colors.red),
+                    if (confirmedSlot != null) _buildDetailRow('Confirmed Slot', '${confirmedSlot['date']} • ${_formatTo12Hour(confirmedSlot['start_time'].substring(0,5))}-${_formatTo12Hour(confirmedSlot['end_time'].substring(0,5))}', color: Colors.green.shade700),
                     _buildDetailRow('Status', request['status'].toString().toUpperCase(), color: _getStatusColor(request['status'])),
                     if (request['description']?.isNotEmpty == true) ...[
                       const SizedBox(height: 12),
@@ -426,7 +471,7 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
           elevation: 0,
-          surfaceTintColor: Colors.white, // Critical: removes purple tint
+          surfaceTintColor: Colors.white,
           shadowColor: Colors.transparent,
           titleSpacing: 0,
           title: const SizedBox.shrink(),
@@ -481,13 +526,16 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
                             title: Text('${r['profile']['full_name']} • ${(r['type'] as String).toUpperCase()}'),
                             subtitle: Text(
                               customerSlot != null
-                                  ? '${DateFormat('dd MMM yyyy').format(DateTime.parse(customerSlot['date']))} • ${customerSlot['start_time'].substring(0,5)}'
+                                  ? '${DateFormat('dd MMM yyyy').format(DateTime.parse(customerSlot['date']))} • ${_formatTo12Hour(customerSlot['start_time'].substring(0,5))}'
                                   : suggestedSlot != null
-                                      ? 'Suggested: ${suggestedSlot['date']} • ${suggestedSlot['start_time'].substring(0,5)}'
+                                      ? 'Suggested: ${suggestedSlot['date']} • ${_formatTo12Hour(suggestedSlot['start_time'].substring(0,5))}'
                                       : 'No slot selected',
                             ),
                             trailing: customerSlot != null
-                                ? const Chip(label: Text('Customer Picked', style: TextStyle(fontSize: 10)), backgroundColor: Colors.blue)
+                                ? const Chip(
+                                    label: Text('Customer Picked', style: TextStyle(fontSize: 10, color: Color(0xFF1172D4))),
+                                    backgroundColor: Color(0xFFE3F2FD),
+                                  )
                                 : suggestedSlot != null
                                     ? Chip(
                                         label: Text(suggestedSlot['is_available'] ? 'Available' : 'Taken'),
@@ -532,7 +580,7 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
                             ),
                             title: Text('${r['profile']['full_name']} • ${(r['type'] as String).toUpperCase()}'),
                             subtitle: slot != null
-                                ? Text('${slot['date']} • ${slot['start_time'].substring(0,5)}-${slot['end_time'].substring(0,5)}')
+                                ? Text('${slot['date']} • ${_formatTo12Hour(slot['start_time'].substring(0,5))}-${_formatTo12Hour(slot['end_time'].substring(0,5))}')
                                 : const Text('No slot assigned'),
                             trailing: Chip(
                               backgroundColor: _getStatusColor(r['status']).withAlpha(30),
