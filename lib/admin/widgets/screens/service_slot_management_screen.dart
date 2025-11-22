@@ -27,12 +27,10 @@ class _ServiceSlotManagementScreenState
   @override
   void initState() {
     super.initState();
-
     final now = DateTime.now();
     _firstDay = DateTime(now.year, now.month - 3, now.day);
     _lastDay = now.add(const Duration(days: 90));
     _selectedDay = DateTime(now.year, now.month, now.day);
-
     WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleLoad());
   }
 
@@ -45,8 +43,7 @@ class _ServiceSlotManagementScreenState
   bool get _isTodayOrFuture {
     if (_selectedDay == null) return false;
     final today = DateTime.now();
-    final sel =
-        DateTime(_selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
+    final sel = DateTime(_selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
     return !sel.isBefore(DateTime(today.year, today.month, today.day));
   }
 
@@ -56,7 +53,7 @@ class _ServiceSlotManagementScreenState
   }
 
   Future<void> _loadSlots() async {
-    if (!mounted) return;
+    if (!mounted || _selectedDay == null) return;
     setState(() => _loading = true);
 
     try {
@@ -66,8 +63,7 @@ class _ServiceSlotManagementScreenState
           .from('time_slots')
           .select('id, date, start_time, end_time, service_type, is_available')
           .eq('date', dateStr)
-          .order('start_time')
-          .timeout(const Duration(seconds: 5));
+          .order('start_time');
 
       if (!mounted) return;
       setState(() {
@@ -77,10 +73,32 @@ class _ServiceSlotManagementScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load slots: $e')),
-      );
+      _showSnackBar('Failed to load slots: $e', Colors.red);
     }
+  }
+
+  void _showSnackBar(String message, Color color) {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: color),
+        );
+      }
+    });
+  }
+
+  String _formatTo12Hour(String time24) {
+    final parts = time24.split(':');
+    int hour = int.parse(parts[0]);
+    final minute = parts[1];
+    final period = hour >= 12 ? 'PM' : 'AM';
+    hour = hour == 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return '$hour:$minute $period';
+  }
+
+  String _formatSlotTime(String start, String end) {
+    return '${_formatTo12Hour(start)} - ${_formatTo12Hour(end)}';
   }
 
   void _showSlotSheet({Map<String, dynamic>? slot}) {
@@ -92,59 +110,91 @@ class _ServiceSlotManagementScreenState
     bool isAvailable = isEdit ? slot['is_available'] : true;
     bool saving = false;
 
-    BuildContext? sheetCtx;
-    final bool use24Hour = MediaQuery.of(context).alwaysUse24HourFormat;
+    BuildContext? sheetContext;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        sheetCtx = ctx;
+        sheetContext = ctx;
         return StatefulBuilder(
           builder: (context, setStateSheet) => Padding(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-              left: 16,
-              right: 16,
-              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 20,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Container(width: 50, height: 5, color: Colors.grey[300]),
+                const SizedBox(height: 16),
                 Text(
-                  isEdit ? 'Edit Slot' : 'Add New Slot',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0D141B),
-                  ),
+                  isEdit ? 'Edit Time Slot' : 'Add New Time Slot',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // START TIME
-                ListTile(
-                  leading: const Icon(Icons.access_time, color: Color(0xFF0D141B)),
-                  title: Text(
-                    startTime == null
-                        ? 'Select Start Time'
-                        : use24Hour
-                            ? '${startTime!.hour.toString().padLeft(2, '0')}:${startTime!.minute.toString().padLeft(2, '0')}'
-                            : startTime!.format(context),
-                    style: TextStyle(
-                      color: startTime == null ? Colors.grey[600] : const Color(0xFF0D141B),
-                    ),
-                  ),
+                // Start Time Picker
+                _buildTimeTile(
+                  title: 'Start Time',
+                  time: startTime,
                   onTap: () async {
+                    final pickerContext = context;
+                    if (!mounted) return;
                     final t = await showTimePicker(
-                      context: context,
+                      context: pickerContext,
                       initialTime: startTime ?? TimeOfDay.now(),
                       builder: (context, child) {
-                        return MediaQuery(
-                          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: use24Hour),
+                        return Theme(
+                          data: ThemeData.light().copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: Color(0xFF1172D4),
+                              onPrimary: Colors.white,
+                              surface: Colors.white,
+                              onSurface: Colors.black87,
+                            ),
+                            timePickerTheme: TimePickerThemeData(
+                              backgroundColor: Colors.white,
+                              hourMinuteShape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              dayPeriodColor: WidgetStateColor.resolveWith((states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return const Color(0xFF1172D4);
+                                }
+                                return const Color(0xFFE3F2FD);
+                              }),
+                              dayPeriodTextColor: WidgetStateColor.resolveWith((states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return Colors.white;
+                                }
+                                return const Color(0xFF1172D4);
+                              }),
+                              dialHandColor: const Color(0xFF1172D4),
+                              dialBackgroundColor: const Color(0xFFE3F2FD),
+                              hourMinuteTextColor: WidgetStateColor.resolveWith((states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return Colors.white;
+                                }
+                                return const Color(0xFF1172D4);
+                              }),
+                              hourMinuteColor: WidgetStateColor.resolveWith((states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return const Color(0xFF1172D4);
+                                }
+                                return const Color(0xFFE3F2FD);
+                              }),
+                            ),
+                            textButtonTheme: TextButtonThemeData(
+                              style: TextButton.styleFrom(foregroundColor: const Color(0xFF1172D4)),
+                            ),
+                          ),
                           child: child!,
                         );
                       },
@@ -153,26 +203,63 @@ class _ServiceSlotManagementScreenState
                   },
                 ),
 
-                // END TIME
-                ListTile(
-                  leading: const Icon(Icons.access_time, color: Color(0xFF0D141B)),
-                  title: Text(
-                    endTime == null
-                        ? 'Select End Time'
-                        : use24Hour
-                            ? '${endTime!.hour.toString().padLeft(2, '0')}:${endTime!.minute.toString().padLeft(2, '0')}'
-                            : endTime!.format(context),
-                    style: TextStyle(
-                      color: endTime == null ? Colors.grey[600] : const Color(0xFF0D141B),
-                    ),
-                  ),
+                const SizedBox(height: 16),
+
+                // End Time Picker
+                _buildTimeTile(
+                  title: 'End Time',
+                  time: endTime,
                   onTap: () async {
+                    final pickerContext = context;
+                    if (!mounted) return;
                     final t = await showTimePicker(
-                      context: context,
+                      context: pickerContext,
                       initialTime: endTime ?? (startTime ?? TimeOfDay.now()),
                       builder: (context, child) {
-                        return MediaQuery(
-                          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: use24Hour),
+                        return Theme(
+                          data: ThemeData.light().copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: Color(0xFF1172D4),
+                              onPrimary: Colors.white,
+                              surface: Colors.white,
+                              onSurface: Colors.black87,
+                            ),
+                            timePickerTheme: TimePickerThemeData(
+                              backgroundColor: Colors.white,
+                              hourMinuteShape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              dayPeriodColor: WidgetStateColor.resolveWith((states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return const Color(0xFF1172D4);
+                                }
+                                return const Color(0xFFE3F2FD);
+                              }),
+                              dayPeriodTextColor: WidgetStateColor.resolveWith((states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return Colors.white;
+                                }
+                                return const Color(0xFF1172D4);
+                              }),
+                              dialHandColor: const Color(0xFF1172D4),
+                              dialBackgroundColor: const Color(0xFFE3F2FD),
+                              hourMinuteTextColor: WidgetStateColor.resolveWith((states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return Colors.white;
+                                }
+                                return const Color(0xFF1172D4);
+                              }),
+                              hourMinuteColor: WidgetStateColor.resolveWith((states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return const Color(0xFF1172D4);
+                                }
+                                return const Color(0xFFE3F2FD);
+                              }),
+                            ),
+                            textButtonTheme: TextButtonThemeData(
+                              style: TextButton.styleFrom(foregroundColor: const Color(0xFF1172D4)),
+                            ),
+                          ),
                           child: child!,
                         );
                       },
@@ -181,14 +268,33 @@ class _ServiceSlotManagementScreenState
                   },
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
+                // Service Type Dropdown - White background, black text
                 DropdownButtonFormField<String>(
                   initialValue: serviceType,
                   decoration: const InputDecoration(
                     labelText: 'Service Type',
-                    border: OutlineInputBorder(),
+                    labelStyle: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: Colors.grey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: Color(0xFFDDDDDD)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: Color(0xFF1172D4), width: 2),
+                    ),
                   ),
+                  dropdownColor: Colors.white,
+                  style: const TextStyle(color: Colors.black, fontSize: 16),
+                  icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black87),
                   items: const [
                     DropdownMenuItem(value: 'service', child: Text('Service')),
                     DropdownMenuItem(value: 'maintenance', child: Text('Maintenance')),
@@ -196,62 +302,56 @@ class _ServiceSlotManagementScreenState
                   onChanged: (v) => setStateSheet(() => serviceType = v!),
                 ),
 
+                const SizedBox(height: 16),
+
                 SwitchListTile(
-                  title: const Text('Available'),
+                  title: const Text('Available for Booking'),
                   value: isAvailable,
-                  activeThumbColor: const Color(0xFF1172D4),
-                  onChanged: (v) => setStateSheet(() => isAvailable = v),
+                  activeTrackColor: const Color(0xFF1172D4),
+                  activeThumbColor: Colors.white,
+                  onChanged: _isTodayOrFuture
+                      ? (v) => setStateSheet(() => isAvailable = v)
+                      : null,
                 ),
 
                 const SizedBox(height: 24),
 
-                // SAVE BUTTON
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1172D4),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     onPressed: startTime == null || endTime == null || saving
                         ? null
                         : () async {
                             setStateSheet(() => saving = true);
                             try {
-                              final startStr =
-                                  '${startTime!.hour.toString().padLeft(2, '0')}:${startTime!.minute.toString().padLeft(2, '0')}';
-                              final endStr =
-                                  '${endTime!.hour.toString().padLeft(2, '0')}:${endTime!.minute.toString().padLeft(2, '0')}';
-
                               final data = {
                                 'date': _selectedDay!.toIso8601String().split('T').first,
-                                'start_time': startStr,
-                                'end_time': endStr,
+                                'start_time':
+                                    '${startTime!.hour.toString().padLeft(2, '0')}:${startTime!.minute.toString().padLeft(2, '0')}',
+                                'end_time':
+                                    '${endTime!.hour.toString().padLeft(2, '0')}:${endTime!.minute.toString().padLeft(2, '0')}',
                                 'service_type': serviceType,
                                 'is_available': isAvailable,
                               };
 
                               if (isEdit) {
-                                await supabase
-                                    .from('time_slots')
-                                    .update(data)
-                                    .eq('id', slot['id']);
+                                await supabase.from('time_slots').update(data).eq('id', slot['id']);
                               } else {
                                 await supabase.from('time_slots').insert(data);
                               }
 
-                              if (!mounted) return;
-                              if (sheetCtx != null && sheetCtx!.mounted) {
-                                Navigator.of(sheetCtx!).pop();
+                              if (sheetContext?.mounted ?? false) {
+                                Navigator.of(sheetContext!).pop();
                               }
-                              _scheduleLoad();
+                              if (mounted) _scheduleLoad();
                             } catch (e) {
-                              if (!mounted) return;
                               setStateSheet(() => saving = false);
-                              // ignore: use_build_context_synchronously
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Save failed: $e')),
-                              );
+                              _showSnackBar('Save failed: $e', Colors.red);
                             }
                           },
                     child: saving
@@ -267,7 +367,6 @@ class _ServiceSlotManagementScreenState
                   ),
                 ),
 
-                // DELETE BUTTON (only in edit mode)
                 if (isEdit) ...[
                   const SizedBox(height: 12),
                   SizedBox(
@@ -276,48 +375,47 @@ class _ServiceSlotManagementScreenState
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
                         side: const BorderSide(color: Colors.red),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
-                          builder: (ctx) => AlertDialog(
+                          builder: (dialogContext) => AlertDialog(
+                            backgroundColor: Colors.white,
                             title: const Text('Delete Slot?'),
-                            content: Text(
-                                'Delete ${slot['start_time']} - ${slot['end_time']} on ${_selectedDay!.toIso8601String().split('T').first}?'),
+                            content: Text('Delete ${_formatSlotTime(slot['start_time'], slot['end_time'])}?'),
                             actions: [
                               TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Cancel')),
+                                onPressed: () => Navigator.pop(dialogContext, false),
+                                child: const Text('Cancel', style: TextStyle(color: Color(0xFF1172D4))),
+                              ),
                               TextButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                                onPressed: () => Navigator.pop(dialogContext, true),
+                                child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                              ),
                             ],
                           ),
                         );
 
-                        if (confirm != true || !mounted) return;
+                        if (confirm != true) return;
+                        if (!mounted) return;
 
                         try {
                           await supabase.from('time_slots').delete().eq('id', slot['id']);
-                          if (sheetCtx != null && sheetCtx!.mounted) {
-                            Navigator.of(sheetCtx!).pop();
+                          if (sheetContext?.mounted ?? false) {
+                            Navigator.of(sheetContext!).pop();
                           }
-                          _scheduleLoad();
+                          if (mounted) _scheduleLoad();
                         } catch (e) {
-                          if (!mounted) return;
-                          // ignore: use_build_context_synchronously
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Delete failed: $e')),
-                          );
+                          _showSnackBar('Delete failed: $e', Colors.red);
                         }
                       },
-                      child: const Text('Delete Slot', style: TextStyle(color: Colors.red)),
+                      child: const Text('Delete Slot'),
                     ),
                   ),
                 ],
-
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -326,121 +424,163 @@ class _ServiceSlotManagementScreenState
     );
   }
 
-  TimeOfDay _parseTime(String time) {
-    final parts = time.split(':');
+  Widget _buildTimeTile({
+    required String title,
+    required TimeOfDay? time,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 0,
+      color: Colors.grey[50],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: const Icon(Icons.access_time, color: Color(0xFF1172D4)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(
+          time == null
+              ? 'Not set'
+              : _formatTo12Hour('${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'),
+          style: TextStyle(
+            color: time == null ? Colors.grey[600] : const Color(0xFF1172D4),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+        onTap: onTap,
+      ),
+    );
+  }
+
+  TimeOfDay _parseTime(String time24) {
+    final parts = time24.split(':');
     return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0D141B),
-        elevation: 0,
-        toolbarHeight: 0,
-        automaticallyImplyLeading: false,
-      ),
-      body: Column(
-        children: [
-          Container(
-            margin: EdgeInsets.zero,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: TableCalendar(
-              firstDay: _firstDay,
-              lastDay: _lastDay,
-              focusedDay: _focusedDay,
-              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-                _scheduleLoad();
-              },
-              calendarStyle: const CalendarStyle(
-                selectedDecoration: BoxDecoration(color: Color(0xFF1172D4), shape: BoxShape.circle),
-                todayDecoration: BoxDecoration(color: Color(0xFFE0E0E0), shape: BoxShape.circle),
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withAlpha(25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+              child: TableCalendar(
+                firstDay: _firstDay,
+                lastDay: _lastDay,
+                focusedDay: _focusedDay,
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                  });
+                  _scheduleLoad();
+                },
+                calendarStyle: CalendarStyle(
+                  selectedDecoration: const BoxDecoration(color: Color(0xFF1172D4), shape: BoxShape.circle),
+                  todayDecoration: BoxDecoration(color: Colors.blue[50], shape: BoxShape.circle),
+                  todayTextStyle: const TextStyle(color: Color(0xFF1172D4), fontWeight: FontWeight.bold),
+                ),
+                headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+              ),
             ),
-          ),
 
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Text('Slots',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Time Slots • ${_slots.length} slot${_slots.length == 1 ? '' : 's'}',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
 
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF1172D4)))
-                : _slots.isEmpty
-                    ? const Center(child: Text('No slots added for this day', style: TextStyle(color: Colors.grey)))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _slots.length,
-                        itemBuilder: (c, i) {
-                          final s = _slots[i];
-                          final avail = s['is_available'] as bool;
-                          final service = s['service_type'] == 'service' ? 'Service' : 'Maintenance';
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF1172D4)))
+                  : _slots.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                _isTodayOrFuture ? 'No slots available' : 'No slots on this date',
+                                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                              ),
+                              if (_isTodayOrFuture) ...[
+                                const SizedBox(height: 8),
+                                Text('Tap + to add slots', style: TextStyle(color: Colors.grey[500])),
+                              ],
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: _slots.length,
+                          itemBuilder: (c, i) {
+                            final s = _slots[i];
+                            final isAvailable = s['is_available'] as bool;
+                            final service = s['service_type'] == 'service' ? 'Service' : 'Maintenance';
 
-                          // Check if slot is in the past
-                          final slotDate = DateTime.parse(s['date'] as String);
-                          final isPast = slotDate.isBefore(DateTime.now().subtract(const Duration(days: 1)));
+                            final statusText = _isTodayOrFuture
+                                ? (isAvailable ? 'Available' : 'Booked')
+                                : (isAvailable ? 'Past Available' : 'Past Booked');
 
-                          return Card(
-                            color: Colors.white,
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey[300]!, width: 1),
-                            ),
-                            child: ListTile(
-                              onLongPress: isPast ? null : () => _showSlotSheet(slot: s),
-                              title: Text(
-                                'Slot ${i + 1} – $service',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: isPast ? Colors.grey[500] : null,
+                            final chipColor = _isTodayOrFuture
+                                ? (isAvailable ? const Color(0xFFE3F2FD) : Colors.grey[300]!)
+                                : (isAvailable ? Colors.grey[300]! : Colors.grey[500]!);
+
+                            final textColor = _isTodayOrFuture
+                                ? (isAvailable ? const Color(0xFF1172D4) : Colors.black54)
+                                : (isAvailable ? Colors.grey[700]! : Colors.white);
+
+                            return Card(
+                              elevation: 0,
+                              color: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(color: Colors.grey[200]!),
+                              ),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: ListTile(
+                                onLongPress: _isTodayOrFuture ? () => _showSlotSheet(slot: s) : null,
+                                title: Text('$service Slot', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                subtitle: Text(_formatSlotTime(s['start_time'], s['end_time']), style: const TextStyle(fontSize: 16)),
+                                trailing: Chip(
+                                  backgroundColor: chipColor,
+                                  label: Text(statusText, style: TextStyle(color: textColor, fontWeight: FontWeight.w500)),
                                 ),
                               ),
-                              subtitle: Text('${s['start_time']} - ${s['end_time']}'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isPast)
-                                    Chip(
-                                      label: const Text('Past'),
-                                      backgroundColor: Colors.grey[400],
-                                      labelStyle: const TextStyle(color: Colors.white, fontSize: 10),
-                                    ),
-                                  const SizedBox(width: 8),
-                                  Chip(
-                                    label: Text(avail ? 'Available' : 'Booked'),
-                                    backgroundColor: avail ? const Color(0xFFE7EDF3) : Colors.grey[300],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-          ),
-        ],
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
       ),
 
       floatingActionButton: _isTodayOrFuture
-          ? FloatingActionButton(
+          ? FloatingActionButton.extended(
               backgroundColor: const Color(0xFF1172D4),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Slot'),
               onPressed: () => _showSlotSheet(),
-              child: const Icon(Icons.add, color: Colors.white),
             )
           : null,
     );
