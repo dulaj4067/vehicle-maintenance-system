@@ -1,5 +1,3 @@
-// lib/admin/screens/customer_registration_list_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -142,7 +140,7 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 8))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,11 +214,11 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        leading: CircleAvatar(backgroundColor: iconColor.withOpacity(0.12), child: Icon(icon, color: iconColor, size: 28)),
+        leading: CircleAvatar(backgroundColor: iconColor.withValues(alpha: 0.12), child: Icon(icon, color: iconColor, size: 28)),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         subtitle: Padding(padding: const EdgeInsets.only(top: 4), child: Text(fileName, style: TextStyle(color: Colors.grey[600], fontSize: 13))),
         trailing: Row(
@@ -298,7 +296,7 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 8))],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 8))],
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(24),

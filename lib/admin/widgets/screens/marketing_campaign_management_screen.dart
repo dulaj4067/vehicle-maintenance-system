@@ -1,5 +1,3 @@
-// lib/admin/screens/marketing_campaign_management_screen.dart
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -163,7 +161,7 @@ class _MarketingCampaignManagementScreenState
                 const SizedBox(height: 16),
 
                 DropdownButtonFormField<LoyaltySegment>(
-                  value: selectedSegment,
+                  initialValue: selectedSegment,
                   decoration: InputDecoration(
                     labelText: 'Target Audience',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),

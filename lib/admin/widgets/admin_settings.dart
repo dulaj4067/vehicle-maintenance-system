@@ -6,12 +6,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AdminSettings extends StatefulWidget {
   const AdminSettings({super.key});
 
-  // ── Cache keys ────────────────────────────────────────────────────────
+  // Cache keys
   static const String _cacheRoleKey = 'user_role';
   static const String _cacheStatusKey = 'user_status';
   static const String _cacheLastCheckKey = 'user_last_check';
 
-  // ── Helper: clear cached profile data ─────────────────────────────────
   static Future<void> _clearCache() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_cacheRoleKey);
@@ -19,10 +18,11 @@ class AdminSettings extends StatefulWidget {
     await prefs.remove(_cacheLastCheckKey);
   }
 
-  // ── Helper: logout ───────────────────────────────────────────────────
-  static Future<void> _logout(BuildContext context) async {
+  static Future<void> logout(BuildContext context) async {
     final supabase = Supabase.instance.client;
 
+    // Show loading only if still mounted
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Logging out…')),
     );
@@ -49,88 +49,53 @@ class _AdminSettingsState extends State<AdminSettings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: const Color(0xFF1172D4), 
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: Colors.white,
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.settings, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text(
-              'Admin Settings',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 32),
-
-            // ── Manage Users ────────────────────────────────────────
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Manage Users'),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Manage users coming soon')),
-                );
-              },
-            ),
-
-            // ── View Reports ────────────────────────────────────────
-            ListTile(
-              leading: const Icon(Icons.analytics),
-              title: const Text('View Reports'),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Reports coming soon')),
-                );
-              },
-            ),
-
-            const Divider(),
-            const SizedBox(height: 16),
-
-            // ── Logout button ───────────────────────────────────────
-            ElevatedButton.icon(
-              onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Logout'),
-                    content: const Text('Are you sure you want to logout?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Logout',
-                            style: TextStyle(color: Colors.red)),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (confirmed == true && mounted) {
-                  await AdminSettings._logout(context);
-                }
-              },
-              icon: const Icon(Icons.logout),
-              label: const Text('Logout'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              // Show confirmation dialog
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
                 ),
-              ),
+              );
+
+              // Critical: Check mounted BEFORE calling async logout
+              if (confirmed != true || !mounted) return;
+
+              // Now 100% safe
+              await AdminSettings.logout(context);
+            },
+            icon: const Icon(Icons.logout, color: Colors.white),
+            label: const Text(
+              'Logout',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 20),
-          ],
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(220, 60),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 8,
+              shadowColor: Colors.red.withValues(alpha: 0.3), 
+            ),
+          ),
         ),
       ),
     );

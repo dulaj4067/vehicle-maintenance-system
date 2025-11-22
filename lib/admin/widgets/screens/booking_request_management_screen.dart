@@ -6,120 +6,213 @@ class BookingRequestManagementScreen extends StatefulWidget {
   const BookingRequestManagementScreen({super.key});
 
   @override
-  State<BookingRequestManagementScreen> createState() => _BookingRequestManagementScreenState();
+  State<BookingRequestManagementScreen> createState() =>
+      _BookingRequestManagementScreenState();
 }
 
-class _BookingRequestManagementScreenState extends State<BookingRequestManagementScreen> {
+class _BookingRequestManagementScreenState extends State<BookingRequestManagementScreen>
+    with TickerProviderStateMixin {
   final supabase = Supabase.instance.client;
+  late TabController _tabController;
 
-  List<Map<String, dynamic>> requests = [];
-  bool loading = true;
+  List<Map<String, dynamic>> pendingRequests = [];
+  List<Map<String, dynamic>> activeRequests = [];
+  bool loadingPending = true;
+  bool loadingActive = true;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadPendingRequests();
+    _loadActiveRequests();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPendingRequests() async {
     if (!mounted) return;
-
-    setState(() => loading = true);
+    setState(() => loadingPending = true);
 
     try {
       final response = await supabase
           .from('service_requests')
           .select('''
-            id,
-            type,
-            description,
-            status,
-            created_at,
-            suggested_slot_id,
-            profile:profile_id (full_name, phone),
-            vehicle:vehicle_id (make, model, year, number_plate, color),
+            id, type, description, status, created_at, slot_id, suggested_slot_id,
+            profile:profile_id (id, full_name, phone),
+            vehicle:vehicle_id (make, model, year, number_plate),
+            customer_slot:slot_id (
+              id, date, start_time, end_time, service_type, is_available
+            ),
             suggested_slot:suggested_slot_id (
-              id,
-              date,
-              start_time,
-              end_time,
-              service_type,
-              is_available
+              id, date, start_time, end_time, service_type, is_available
             )
           ''')
           .eq('status', 'pending')
           .order('created_at', ascending: false);
 
       if (!mounted) return;
-
       setState(() {
-        requests = List<Map<String, dynamic>>.from(response);
-        loading = false;
+        pendingRequests = List<Map<String, dynamic>>.from(response);
+        loadingPending = false;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => loading = false);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('Failed to load requests'), backgroundColor: Colors.red),
-      );
+      setState(() => loadingPending = false);
+      _showSnackBar('Failed to load pending requests', Colors.red);
     }
   }
 
-  Future<void> _approveRequest(String requestId, Map<String, dynamic> slot) async {
-    if (!(slot['is_available'] as bool? ?? false)) {
+  Future<void> _loadActiveRequests() async {
+    if (!mounted) return;
+    setState(() => loadingActive = true);
+
+    try {
+      final response = await supabase
+          .from('service_requests')
+          .select('''
+            id, type, description, status, created_at,
+            profile:profile_id (full_name, phone),
+            vehicle:vehicle_id (make, model, year, number_plate),
+            slot:slot_id (id, date, start_time, end_time, service_type)
+          ''')
+          .inFilter('status', ['confirmed', 'cancelled', 'amended'])
+          .order('created_at', ascending: false);
+
       if (!mounted) return;
+      setState(() {
+        activeRequests = List<Map<String, dynamic>>.from(response);
+        loadingActive = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loadingActive = false);
+      _showSnackBar('Failed to load active requests', Colors.red);
+    }
+  }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This slot is no longer available'), backgroundColor: Colors.orange),
-      );
+  void _showSnackBar(String message, Color color) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color),
+    );
+  }
 
-      _loadPendingRequests();
+  Future<void> _suggestNewSlot(String requestId, Map<String, dynamic> request) async {
+    final selectedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 90)),
+    );
+    if (selectedDate == null || !mounted) return;
+
+    final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
+    final slots = await supabase
+        .from('time_slots')
+        .select()
+        .eq('date', dateStr)
+        .eq('service_type', request['type'])
+        .eq('is_available', true)
+        .order('start_time');
+
+    if (slots.isEmpty) {
+      if (!mounted) return;
+      _showSnackBar('No available slots on this date', Colors.orange);
       return;
     }
 
+    final selectedSlot = await showDialog<Map<String, dynamic>?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Suggest Alternative Slot'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: slots.length,
+            itemBuilder: (context, index) {
+              final slot = slots[index];
+              final start = slot['start_time'].toString().substring(0, 5);
+              final end = slot['end_time'].toString().substring(0, 5);
+              return ListTile(
+                title: Text('$start - $end'),
+                subtitle: Text(DateFormat('EEEE, dd MMM yyyy').format(selectedDate)),
+                trailing: const Icon(Icons.check_circle, color: Colors.green),
+                onTap: () => Navigator.pop(context, slot),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    if (selectedSlot == null || !mounted) return;
+
+    await supabase.from('service_requests').update({
+      'suggested_slot_id': selectedSlot['id'],
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', requestId);
+
+    await supabase.from('notifications').insert({
+      'profile_id': request['profile']['id'],
+      'type': 'offer',
+      'title': 'New Time Suggested',
+      'message': 'Admin suggested: ${selectedSlot['start_time'].substring(0, 5)} on ${DateFormat('dd MMM yyyy').format(selectedDate)}',
+      'related_id': requestId,
+    });
+
+    if (!mounted) return;
+    _showSnackBar('Slot suggested successfully!', Colors.green);
+    _loadPendingRequests();
+  }
+
+  Future<void> _approveRequest(String requestId, String slotId) async {
     try {
+      final slotCheck = await supabase
+          .from('time_slots')
+          .select('is_available')
+          .eq('id', slotId)
+          .single();
+
+      if (!(slotCheck['is_available'] as bool)) {
+        if (!mounted) return;
+        _showSnackBar('This slot is no longer available', Colors.orange);
+        _loadPendingRequests();
+        return;
+      }
+
       await supabase.from('service_requests').update({
         'status': 'confirmed',
-        'slot_id': slot['id'],
+        'slot_id': slotId,
+        'suggested_slot_id': null,
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', requestId);
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking Confirmed Successfully!'), backgroundColor: Colors.green),
-      );
-
+      _showSnackBar('Booking Confirmed Successfully!', Colors.green);
       _loadPendingRequests();
+      _loadActiveRequests();
     } catch (e) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-      );
+      _showSnackBar('Error confirming booking', Colors.red);
     }
   }
 
-  Future<void> _rejectRequest(String requestId, String currentDescription) async {
-    final reasonController = TextEditingController();
-
+  Future<void> _rejectRequest(String requestId, String currentDesc) async {
+    final reasonCtrl = TextEditingController();
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Reject Booking Request'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Are you sure you want to reject this request?'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(hintText: 'Reason (optional)', border: OutlineInputBorder()),
-              maxLines: 3,
-            ),
-          ],
+      builder: (context) => AlertDialog(
+        title: const Text('Reject Request'),
+        content: TextField(
+          controller: reasonCtrl,
+          decoration: const InputDecoration(hintText: 'Reason (optional)'),
+          maxLines: 3,
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
@@ -134,184 +227,170 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
 
     if (confirm != true || !mounted) return;
 
-    final reason = reasonController.text.trim();
-    final newDescription = reason.isEmpty
-        ? '$currentDescription\n\n[REJECTED by Admin]'
-        : '$currentDescription\n\n[REJECTED] $reason';
+    final reason = reasonCtrl.text.trim();
+    final newDesc = reason.isEmpty
+        ? '$currentDesc\n\n[REJECTED by Admin]'
+        : '$currentDesc\n\n[REJECTED] $reason';
 
-    try {
-      await supabase.from('service_requests').update({
-        'status': 'cancelled',
-        'description': newDescription,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', requestId);
+    await supabase.from('service_requests').update({
+      'status': 'cancelled',
+      'description': newDesc,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', requestId);
 
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Request Rejected', style: TextStyle(fontWeight: FontWeight.w600)),
-          backgroundColor: Colors.red.shade100,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(20),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-
-      _loadPendingRequests();
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-      );
-    }
+    if (!mounted) return;
+    _showSnackBar('Request Rejected', Colors.red);
+    _loadPendingRequests();
   }
 
-  void _showRequestDetails(Map<String, dynamic> request) {
+  Future<void> _cancelConfirmedRequest(String requestId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Appointment'),
+        content: const Text('This will free the time slot. Continue?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('No')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    await supabase.from('service_requests').update({
+      'status': 'cancelled',
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', requestId);
+
+    if (!mounted) return;
+    _showSnackBar('Appointment Cancelled', Colors.orange);
+    _loadActiveRequests();
+  }
+
+  void _showRequestDetails(Map<String, dynamic> request, {required bool isPending}) {
     final profile = request['profile'] as Map<String, dynamic>;
     final vehicle = request['vehicle'] as Map<String, dynamic>;
-    final slot = request['suggested_slot'] as Map<String, dynamic>?;
-    final isAvailable = slot?['is_available'] as bool? ?? false;
+    final customerSlot = request['customer_slot'] as Map<String, dynamic>?;
+    final suggestedSlot = request['suggested_slot'] as Map<String, dynamic>?;
+    final confirmedSlot = request['slot'] as Map<String, dynamic>?;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
+      builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.92,
-        maxChildSize: 0.97,
-        builder: (_, controller) => Container(
+        builder: (context, scrollController) => Container(
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: ListView(
-            controller: controller,
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+            controller: scrollController,
+            padding: const EdgeInsets.all(24),
             children: [
-              Center(
-                child: Container(
-                  width: 60,
-                  height: 6,
-                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
+              const Center(child: SizedBox(width: 60, height: 6, child: ColoredBox(color: Colors.grey))),
+              const SizedBox(height: 20),
+              Text(profile['full_name'] ?? 'Customer', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              Text(profile['phone'] ?? '', style: const TextStyle(color: Colors.grey), textAlign: TextAlign.center),
               const SizedBox(height: 24),
 
-              Text(
-                profile['full_name'] ?? 'Customer',
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+              // Pure white card
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: ListTile(
+                  leading: const Icon(Icons.directions_car, color: Color(0xFF1172D4)),
+                  title: Text('${vehicle['make']} ${vehicle['model']} ${vehicle['year'] ?? ''}'),
+                  subtitle: Text('Plate: ${vehicle['number_plate'] ?? '—'}'),
+                ),
               ),
-              Text(
-                profile['phone'] ?? '',
-                style: TextStyle(fontSize: 18, color: Colors.grey[700]),
-                textAlign: TextAlign.center,
-              ),
+              const SizedBox(height: 16),
 
+              // Details card - pure white
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Request Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Divider(height: 24, thickness: 1),
+                    _buildDetailRow('Type', (request['type'] as String).toUpperCase()),
+                    if (customerSlot != null) _buildDetailRow('Customer Selected', '${customerSlot['date']} • ${customerSlot['start_time'].substring(0,5)}-${customerSlot['end_time'].substring(0,5)}', color: Colors.blue.shade700),
+                    if (suggestedSlot != null) _buildDetailRow('Admin Suggested', '${suggestedSlot['date']} • ${suggestedSlot['start_time'].substring(0,5)}-${suggestedSlot['end_time'].substring(0,5)}', color: suggestedSlot['is_available'] ? Colors.green : Colors.red),
+                    if (confirmedSlot != null) _buildDetailRow('Confirmed Slot', '${confirmedSlot['date']} • ${confirmedSlot['start_time'].substring(0,5)}-${confirmedSlot['end_time'].substring(0,5)}', color: Colors.green.shade700),
+                    _buildDetailRow('Status', request['status'].toString().toUpperCase(), color: _getStatusColor(request['status'])),
+                    if (request['description']?.isNotEmpty == true) ...[
+                      const SizedBox(height: 12),
+                      const Text('Description:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(request['description']),
+                    ],
+                  ],
+                ),
+              ),
               const SizedBox(height: 32),
 
-              Card(
-                color: Colors.white,
-                elevation: 6,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.directions_car, color: Color(0xFF1172D4), size: 28),
-                        SizedBox(width: 12),
-                        Text('Vehicle', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))
-                      ],
+              // Action Buttons
+              if (isPending) ...[
+                Row(children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      onPressed: () { Navigator.pop(context); _rejectRequest(request['id'], request['description'] ?? ''); },
+                      child: const Text('Reject', style: TextStyle(color: Colors.white)),
                     ),
-                    const Divider(height: 32),
-
-                    Text(
-                      '${vehicle['make']} ${vehicle['model']} ${vehicle['year'] ?? ''}',
-                      style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                      onPressed: () { Navigator.pop(context); _suggestNewSlot(request['id'], request); },
+                      child: const Text('Suggest Alternative', style: TextStyle(color: Colors.white)),
                     ),
-                    const SizedBox(height: 6),
-
-                    Text(
-                      'Plate: ${vehicle['number_plate'] ?? '—'}',
-                      style: TextStyle(color: Colors.grey[700], fontSize: 16),
-                    ),
-                  ]),
+                  ),
+                ]),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1172D4),
+                    padding: const EdgeInsets.all(18),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: (suggestedSlot?['is_available'] == true)
+                      ? () { Navigator.pop(context); _approveRequest(request['id'], suggestedSlot!['id']); }
+                      : (customerSlot?['is_available'] == true)
+                          ? () { Navigator.pop(context); _approveRequest(request['id'], customerSlot!['id']); }
+                          : null,
+                  child: Text(
+                    suggestedSlot?['is_available'] == true
+                        ? 'Confirm Suggested Slot'
+                        : customerSlot?['is_available'] == true
+                            ? 'Confirm Customer Slot'
+                            : 'No Available Slot',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
                 ),
-              ),
-
-              const SizedBox(height: 24),
-
-              Card(
-                color: Colors.white,
-                elevation: 6,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.build_circle, color: Color(0xFF1172D4), size: 28),
-                        SizedBox(width: 12),
-                        Text('Service Request', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))
-                      ],
-                    ),
-                    const Divider(height: 32),
-
-                    _row('Type', (request['type'] as String?)?.toUpperCase() ?? 'UNKNOWN'),
-                    _row('Requested', DateFormat('dd MMM yyyy, HH:mm').format(DateTime.parse(request['created_at']))),
-
-                    if (slot != null) ...[
-                      _row('Date', DateFormat('EEEE, dd MMMM yyyy').format(DateTime.parse(slot['date']))),
-                      _row('Time', '${slot['start_time'].toString().substring(0, 5)} - ${slot['end_time'].toString().substring(0, 5)}'),
-                      _row('Status', isAvailable ? 'Available' : 'Booked', color: isAvailable ? Colors.green : Colors.red),
-                    ],
-
-                    const SizedBox(height: 16),
-                    const Text('Description:', style: TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    Text(request['description'] ?? 'No description', style: const TextStyle(fontSize: 16)),
-                  ]),
+              ] else if (request['status'] == 'confirmed') ...[
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, padding: const EdgeInsets.all(18)),
+                  onPressed: () { Navigator.pop(context); _cancelConfirmedRequest(request['id']); },
+                  child: const Text('Cancel Appointment', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
-              ),
-
+              ],
               const SizedBox(height: 40),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade600,
-                        padding: const EdgeInsets.all(18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _rejectRequest(request['id'], request['description'] ?? '');
-                      },
-                      child: const Text('Reject Request', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isAvailable ? const Color(0xFF1172D4) : Colors.grey,
-                        padding: const EdgeInsets.all(18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      onPressed: isAvailable ? () { Navigator.pop(context); _approveRequest(request['id'], slot!); } : null,
-                      child: Text(isAvailable ? 'Confirm Booking' : 'Slot Taken',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -319,114 +398,151 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
     );
   }
 
-  Widget _row(String label, String value, {Color? color}) => Padding(
+  Widget _buildDetailRow(String label, String value, {Color? color}) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(width: 110, child: Text('$label:', style: const TextStyle(fontWeight: FontWeight.w600))),
-            const SizedBox(width: 16),
-            Expanded(child: Text(value, style: TextStyle(color: color ?? Colors.black87, fontSize: 16))),
+            SizedBox(width: 140, child: Text('$label:', style: const TextStyle(fontWeight: FontWeight.w600))),
+            Expanded(child: Text(value, style: TextStyle(color: color ?? Colors.black87))),
           ],
         ),
       );
+
+  Color _getStatusColor(String? status) => switch (status) {
+        'confirmed' => Colors.green,
+        'cancelled' => Colors.red,
+        'pending' => Colors.orange,
+        _ => Colors.grey,
+      };
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: null,
-      body: SafeArea(
-        child: loading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF1172D4)))
-            : requests.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No pending requests',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: requests.length,
-                    itemBuilder: (_, i) {
-                      final r = requests[i];
-                      final p = r['profile'];
-                      final v = r['vehicle'];
-                      final s = r['suggested_slot'];
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(56),
+        child: AppBar(
+          automaticallyImplyLeading: true,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          surfaceTintColor: Colors.white, // Critical: removes purple tint
+          shadowColor: Colors.transparent,
+          titleSpacing: 0,
+          title: const SizedBox.shrink(),
+          bottom: TabBar(
+            controller: _tabController,
+            labelColor: Colors.black,
+            unselectedLabelColor: Colors.grey[600],
+            labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+            indicatorColor: const Color(0xFF1172D4),
+            indicatorWeight: 3,
+            tabs: const [
+              Tab(text: 'Pending'),
+              Tab(text: 'Active / History'),
+            ],
+          ),
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // Pending Tab
+          loadingPending
+              ? const Center(child: CircularProgressIndicator())
+              : pendingRequests.isEmpty
+                  ? const Center(child: Text('No pending requests', style: TextStyle(fontSize: 18, color: Colors.grey)))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: pendingRequests.length,
+                      itemBuilder: (context, index) {
+                        final r = pendingRequests[index];
+                        final customerSlot = r['customer_slot'] as Map<String, dynamic>?;
+                        final suggestedSlot = r['suggested_slot'] as Map<String, dynamic>?;
 
-                      return Card(
-                        color: Colors.white,
-                        elevation: 10,
-                        margin: const EdgeInsets.only(bottom: 20),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(24),
-                          onTap: () => _showRequestDetails(r),
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Row(children: [
-                                CircleAvatar(
-                                  radius: 30,
-                                  backgroundColor: const Color(0xFFF0F7FF),
-                                  child: const Icon(Icons.person, color: Color(0xFF1172D4)),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(p['full_name'] ?? 'Customer',
-                                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                                      Text(p['phone'] ?? '',
-                                          style: TextStyle(color: Colors.grey[600], fontSize: 15)),
-                                    ],
-                                  ),
-                                ),
-                                Chip(
-                                  backgroundColor: Colors.orange.shade50,
-                                  label: Text(
-                                    (r['type'] as String?)?.toUpperCase() ?? 'SERVICE',
-                                    style: TextStyle(
-                                        color: Colors.orange.shade800, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ]),
-
-                              const SizedBox(height: 16),
-
-                              Row(children: [
-                                const Icon(Icons.directions_car, size: 20),
-                                const SizedBox(width: 8),
-                                Text('${v['make']} ${v['model']} • ${v['number_plate']}')
-                              ]),
-
-                              if (s != null) ...[
-                                const SizedBox(height: 10),
-                                Row(children: [
-                                  const Icon(Icons.calendar_today, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                      '${DateFormat('dd MMM yyyy').format(DateTime.parse(s['date']))} • '
-                                      '${s['start_time'].substring(0, 5)} - ${s['end_time'].substring(0, 5)}')
-                                ]),
-                              ],
-
-                              const SizedBox(height: 12),
-
-                              Text(
-                                r['description'] ?? '',
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: Colors.grey[700]),
-                              ),
-                            ]),
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.grey.shade200),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                          child: ListTile(
+                            onTap: () => _showRequestDetails(r, isPending: true),
+                            leading: CircleAvatar(
+                              backgroundColor: customerSlot != null
+                                  ? Colors.blue.withAlpha(30)
+                                  : Colors.orange.withAlpha(30),
+                              child: Icon(
+                                customerSlot != null ? Icons.schedule_send : Icons.access_time,
+                                color: customerSlot != null ? Colors.blue : Colors.orange,
+                              ),
+                            ),
+                            title: Text('${r['profile']['full_name']} • ${(r['type'] as String).toUpperCase()}'),
+                            subtitle: Text(
+                              customerSlot != null
+                                  ? '${DateFormat('dd MMM yyyy').format(DateTime.parse(customerSlot['date']))} • ${customerSlot['start_time'].substring(0,5)}'
+                                  : suggestedSlot != null
+                                      ? 'Suggested: ${suggestedSlot['date']} • ${suggestedSlot['start_time'].substring(0,5)}'
+                                      : 'No slot selected',
+                            ),
+                            trailing: customerSlot != null
+                                ? const Chip(label: Text('Customer Picked', style: TextStyle(fontSize: 10)), backgroundColor: Colors.blue)
+                                : suggestedSlot != null
+                                    ? Chip(
+                                        label: Text(suggestedSlot['is_available'] ? 'Available' : 'Taken'),
+                                        backgroundColor: suggestedSlot['is_available']
+                                            ? Colors.green.withAlpha(40)
+                                            : Colors.red.withAlpha(40),
+                                      )
+                                    : const Icon(Icons.schedule, color: Colors.grey),
+                          ),
+                        );
+                      },
+                    ),
+
+          // Active Tab
+          loadingActive
+              ? const Center(child: CircularProgressIndicator())
+              : activeRequests.isEmpty
+                  ? const Center(child: Text('No active appointments', style: TextStyle(fontSize: 18, color: Colors.grey)))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: activeRequests.length,
+                      itemBuilder: (context, index) {
+                        final r = activeRequests[index];
+                        final slot = r['slot'] as Map<String, dynamic>?;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: ListTile(
+                            onTap: () => _showRequestDetails(r, isPending: false),
+                            leading: CircleAvatar(
+                              backgroundColor: r['status'] == 'confirmed'
+                                  ? Colors.green.withAlpha(30)
+                                  : Colors.red.withAlpha(30),
+                              child: Icon(
+                                r['status'] == 'confirmed' ? Icons.check_circle : Icons.cancel,
+                                color: r['status'] == 'confirmed' ? Colors.green : Colors.red,
+                              ),
+                            ),
+                            title: Text('${r['profile']['full_name']} • ${(r['type'] as String).toUpperCase()}'),
+                            subtitle: slot != null
+                                ? Text('${slot['date']} • ${slot['start_time'].substring(0,5)}-${slot['end_time'].substring(0,5)}')
+                                : const Text('No slot assigned'),
+                            trailing: Chip(
+                              backgroundColor: _getStatusColor(r['status']).withAlpha(30),
+                              label: Text(r['status'].toString().toUpperCase(), style: TextStyle(color: _getStatusColor(r['status']))),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+        ],
       ),
     );
   }

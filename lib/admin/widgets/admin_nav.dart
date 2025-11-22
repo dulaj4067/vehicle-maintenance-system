@@ -50,7 +50,7 @@ class _AdminNavState extends State<AdminNav> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         foregroundColor: const Color(0xFF0D141B),
         title: Text(
           _titles[_selectedIndex],

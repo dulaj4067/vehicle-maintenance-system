@@ -68,9 +68,14 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
     }
   }
 
-  // SMART OPEN: Images in PhotoView, others in external app
+  // SMART OPEN WITH BUCKET NAME FIX - Images in PhotoView, others in external app
   Future<void> _smartOpen(String url) async {
-    final extension = url.split('.').last.toLowerCase().split('?').first;
+    // FIX OLD BUCKET NAMES IN URL
+    String fixedUrl = url
+        .replaceAll('customer-documents', 'customer_documents')
+        .replaceAll('vehicle-documents', 'vehicle_documents');
+
+    final extension = fixedUrl.split('.').last.toLowerCase().split('?').first;
 
     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
       if (!mounted) return;
@@ -81,7 +86,7 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
             backgroundColor: Colors.black,
             appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
             body: PhotoView(
-              imageProvider: NetworkImage(url),
+              imageProvider: NetworkImage(fixedUrl),
               loadingBuilder: (_, __) => const Center(child: CircularProgressIndicator(color: Colors.white)),
               errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.error, color: Colors.red, size: 60)),
             ),
@@ -89,7 +94,7 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
         ),
       );
     } else {
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      await launchUrl(Uri.parse(fixedUrl), mode: LaunchMode.externalApplication);
     }
   }
 
@@ -139,7 +144,7 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 8))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,7 +180,13 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
                   final String type = doc['type'] ?? 'document';
                   final String url = doc['s3_link'] ?? '';
                   if (url.isEmpty) return const SizedBox();
-                  return _buildDocumentCard(_formatDocType(type), url);
+                  
+                  // FINAL FIX FOR BUCKET NAME
+                  final String fixedUrl = url
+                      .replaceAll('customer-documents', 'customer_documents')
+                      .replaceAll('vehicle-documents', 'vehicle_documents');
+                  
+                  return _buildDocumentCard(_formatDocType(type), fixedUrl);
                 }),
 
               const SizedBox(height: 60),
@@ -231,11 +242,11 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        leading: CircleAvatar(backgroundColor: iconColor.withOpacity(0.12), child: Icon(icon, color: iconColor, size: 28)),
+        leading: CircleAvatar(backgroundColor: iconColor.withValues(alpha: 0.12), child: Icon(icon, color: iconColor, size: 28)),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         subtitle: Padding(padding: const EdgeInsets.only(top: 4), child: Text(fileName, style: TextStyle(color: Colors.grey[600], fontSize: 13))),
         trailing: Row(
@@ -319,7 +330,7 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 8))],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 8))],
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(24),
