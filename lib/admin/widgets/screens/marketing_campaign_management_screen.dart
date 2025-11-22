@@ -182,11 +182,29 @@ class _MarketingCampaignManagementScreenState
                   label: 'Start Date',
                   date: startDate,
                   onTap: () async {
+                    final pickerContext = context;
+                    if (!mounted) return;
                     final date = await showDatePicker(
-                      context: context,
+                      context: pickerContext,
                       initialDate: startDate,
                       firstDate: DateTime.now(),
                       lastDate: DateTime(2030),
+                      builder: (context, child) {
+                        return Theme(
+                          data: ThemeData.light().copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: Color(0xFF1172D4),
+                              onPrimary: Colors.white,
+                              surface: Colors.white,
+                              onSurface: Colors.black87,
+                            ),
+                            dialogTheme: const DialogThemeData(
+                              backgroundColor: Colors.white,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
                     if (date != null) setStateSheet(() => startDate = date);
                   },
@@ -195,11 +213,29 @@ class _MarketingCampaignManagementScreenState
                   label: 'End Date',
                   date: endDate,
                   onTap: () async {
+                    final pickerContext = context;
+                    if (!mounted) return;
                     final date = await showDatePicker(
-                      context: context,
+                      context: pickerContext,
                       initialDate: endDate,
                       firstDate: startDate,
                       lastDate: DateTime(2030),
+                      builder: (context, child) {
+                        return Theme(
+                          data: ThemeData.light().copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: Color(0xFF1172D4),
+                              onPrimary: Colors.white,
+                              surface: Colors.white,
+                              onSurface: Colors.black87,
+                            ),
+                            dialogTheme: const DialogThemeData(
+                              backgroundColor: Colors.white,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
                     if (date != null) setStateSheet(() => endDate = date);
                   },
@@ -222,6 +258,7 @@ class _MarketingCampaignManagementScreenState
                   ),
                   onPressed: () async {
                     if (titleController.text.trim().isEmpty || contentController.text.trim().isEmpty) {
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Title and message are required'), backgroundColor: Colors.orange),
                       );
@@ -261,7 +298,7 @@ class _MarketingCampaignManagementScreenState
                         await supabase.from('campaigns').insert(data);
                       }
 
-                      if (!mounted) return;
+                      if (!context.mounted) return;
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -271,10 +308,10 @@ class _MarketingCampaignManagementScreenState
                       );
 
                       Navigator.pop(context);
-                      _loadCampaigns();
+                      if (mounted) _loadCampaigns();
                     } catch (e) {
                       debugPrint('Campaign Error: $e');
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
                       );
@@ -296,33 +333,41 @@ class _MarketingCampaignManagementScreenState
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     onPressed: () async {
+                      final dialogContext = context;
+                      if (!mounted) return;
+                      
                       final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (_) => AlertDialog(
+                        context: dialogContext,
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: Colors.white,
                           title: const Text('Delete Campaign?'),
                           content: const Text('This action cannot be undone.'),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
                             TextButton(
-                              onPressed: () => Navigator.pop(context, true),
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('Cancel', style: TextStyle(color: Color(0xFF1172D4))),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
                               child: const Text('Delete', style: TextStyle(color: Colors.red)),
                             ),
                           ],
                         ),
                       );
 
-                      if (confirm != true || !mounted) return;
+                      if (confirm != true) return;
+                      if (!mounted) return;
 
                       try {
                         await supabase.from('campaigns').delete().eq('id', campaign['id']);
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Campaign deleted'), backgroundColor: Colors.green),
                         );
                         Navigator.pop(context);
-                        _loadCampaigns();
+                        if (mounted) _loadCampaigns();
                       } catch (e) {
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Delete failed: $e'), backgroundColor: Colors.red),
                         );
@@ -344,8 +389,7 @@ class _MarketingCampaignManagementScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      // APPBAR REMOVED
-      body: SafeArea(  // Added SafeArea to avoid status bar overlap
+      body: SafeArea(
         child: loading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF1172D4)))
             : campaigns.isEmpty
