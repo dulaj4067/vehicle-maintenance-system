@@ -161,11 +161,15 @@ class _MarketingCampaignManagementScreenState
                 const SizedBox(height: 16),
 
                 DropdownButtonFormField<LoyaltySegment>(
-                  initialValue: selectedSegment,
+                  value: selectedSegment,
                   decoration: InputDecoration(
                     labelText: 'Target Audience',
+                    labelStyle: const TextStyle(color: Colors.black),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
+                  dropdownColor: Colors.white,
                   items: LoyaltySegment.values
                       .map((seg) => DropdownMenuItem(
                             value: seg,

@@ -76,11 +76,11 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
           .from('service_requests')
           .select('''
             id, type, description, status, created_at,
-            profile:profile_id (full_name, phone),
+            profile:profile_id (id, full_name, phone),
             vehicle:vehicle_id (make, model, year, number_plate),
             slot:slot_id (id, date, start_time, end_time, service_type)
           ''')
-          .inFilter('status', ['confirmed', 'cancelled', 'amended'])
+          .inFilter('status', ['confirmed', 'cancelled', 'amended', 'completed'])
           .order('created_at', ascending: false);
 
       if (!mounted) return;
@@ -231,6 +231,56 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
     } catch (e) {
       if (!mounted) return;
       _showSnackBar('Error confirming booking', Colors.red);
+    }
+  }
+
+  Future<void> _completeAppointment(String requestId, Map<String, dynamic> request) async {
+    final dialogContext = context;
+    if (!mounted) return;
+    
+    final confirm = await showDialog<bool>(
+      context: dialogContext,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text('Complete Appointment'),
+        content: const Text('Mark this appointment as completed?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF1172D4))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Complete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      await supabase.from('service_requests').update({
+        'status': 'completed',
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', requestId);
+
+      // Send notification to customer
+      await supabase.from('notifications').insert({
+        'profile_id': request['profile']['id'],
+        'type': 'confirmation',
+        'title': 'Service Completed',
+        'message': 'Your ${request['type']} service has been completed. Thank you for choosing our service!',
+        'related_id': requestId,
+      });
+
+      if (!mounted) return;
+      _showSnackBar('Appointment Completed Successfully!', Colors.green);
+      _loadActiveRequests();
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar('Error completing appointment', Colors.red);
     }
   }
 
@@ -430,7 +480,21 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
                 ),
               ] else if (request['status'] == 'confirmed') ...[
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, padding: const EdgeInsets.all(18)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.all(18),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () { Navigator.pop(context); _completeAppointment(request['id'], request); },
+                  child: const Text('Complete Appointment', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.all(18),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
                   onPressed: () { Navigator.pop(context); _cancelConfirmedRequest(request['id']); },
                   child: const Text('Cancel Appointment', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
@@ -455,6 +519,7 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
 
   Color _getStatusColor(String? status) => switch (status) {
         'confirmed' => Colors.green,
+        'completed' => Colors.blue,
         'cancelled' => Colors.red,
         'pending' => Colors.orange,
         _ => Colors.grey,
@@ -572,10 +637,20 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
                             leading: CircleAvatar(
                               backgroundColor: r['status'] == 'confirmed'
                                   ? Colors.green.withAlpha(30)
-                                  : Colors.red.withAlpha(30),
+                                  : r['status'] == 'completed'
+                                      ? Colors.blue.withAlpha(30)
+                                      : Colors.red.withAlpha(30),
                               child: Icon(
-                                r['status'] == 'confirmed' ? Icons.check_circle : Icons.cancel,
-                                color: r['status'] == 'confirmed' ? Colors.green : Colors.red,
+                                r['status'] == 'confirmed'
+                                    ? Icons.check_circle
+                                    : r['status'] == 'completed'
+                                        ? Icons.task_alt
+                                        : Icons.cancel,
+                                color: r['status'] == 'confirmed'
+                                    ? Colors.green
+                                    : r['status'] == 'completed'
+                                        ? Colors.blue
+                                        : Colors.red,
                               ),
                             ),
                             title: Text('${r['profile']['full_name']} • ${(r['type'] as String).toUpperCase()}'),
