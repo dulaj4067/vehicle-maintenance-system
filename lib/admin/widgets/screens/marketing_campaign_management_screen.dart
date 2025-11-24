@@ -161,7 +161,7 @@ class _MarketingCampaignManagementScreenState
                 const SizedBox(height: 16),
 
                 DropdownButtonFormField<LoyaltySegment>(
-                  value: selectedSegment,
+                  initialValue: selectedSegment,
                   decoration: InputDecoration(
                     labelText: 'Target Audience',
                     labelStyle: const TextStyle(color: Colors.black),

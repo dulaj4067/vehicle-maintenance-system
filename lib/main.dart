@@ -7,8 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'theme_color.dart';
 import 'offline_wrapper.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,9 +21,10 @@ Future<void> main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  OneSignal.Debug.setLogLevel(OSLogLevel.debug);
+  OneSignal.initialize(dotenv.env['ONESIGNAL_APP_ID']!);
+
+  OneSignal.Notifications.requestPermission(true);
 
   await Permission.notification.request();
 

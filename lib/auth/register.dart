@@ -9,7 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -47,19 +47,20 @@ class _RegisterPageState extends State<RegisterPage> {
     _checkAndRequestPermission();
   }
 
-Future<void> _saveFcmToken() async {
+  Future<void> _saveOneSignalId(String userId) async {
   try {
-    final fcmToken = await FirebaseMessaging.instance.getToken();
-    if (fcmToken != null) {
-      final userId = supabase.auth.currentUser!.id;
+    OneSignal.login(userId);
 
+    final id = OneSignal.User.pushSubscription.id;
+
+    if (id != null) {
       await supabase
           .from('profiles')
-          .update({'fcm_token': fcmToken})
+          .update({'notification_id': id})
           .eq('id', userId);
     }
   } catch (e) {
-    print('Error saving FCM token during registration: $e');
+    print('Error saving notification ID: $e');
   }
 }
 
@@ -276,16 +277,21 @@ Future<void> _saveFcmToken() async {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor:Colors.white,
           title: const Text('Registration Successful'),
           content: const Text(
-            'Your account has been registered successfully. It is now pending approval by the admin. You will be notified via email once it is verified.',
+            'Your account has been registered successfully. It is now pending approval . You will be notified once it is verified.',
           ),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.go('/login');
+              onPressed: () async { 
+                await supabase.auth.signOut(); 
+                
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  context.go('/login');
+                }
               },
             ),
           ],
@@ -406,7 +412,7 @@ Future<void> _saveFcmToken() async {
         if (documents.isNotEmpty) 'documents': documents,
       });
 
-      await _saveFcmToken();
+      await _saveOneSignalId(user.id);
 
       if (!mounted) return;
       await _showSuccessDialog();
