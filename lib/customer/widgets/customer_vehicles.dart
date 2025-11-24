@@ -195,7 +195,7 @@ class _CustomerVehiclesState extends State<CustomerVehicles> {
     String? plateError;
     bool isSubmitting = false;
     bool hasExistingDocument = isEdit && existingVehicle.documents['doc'] != null;
-    String documentDisplay = hasExistingDocument ? 'Document uploaded' : 'No document selected';
+    String documentDisplay = hasExistingDocument ? 'Document uploaded' : '+ Add Document';
 
     await showModalBottomSheet(
       context: context,
@@ -339,6 +339,10 @@ class _CustomerVehiclesState extends State<CustomerVehicles> {
                   const SizedBox(height: 16),
                   if (!hasExistingDocument)
                     TextButton(
+                      style: TextButton.styleFrom(
+                      side: BorderSide(color: ThemeColorManager.getSafeColor()),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                    ),
                       onPressed: () async {
                         final result = await FilePicker.platform.pickFiles(
                           type: FileType.custom,
