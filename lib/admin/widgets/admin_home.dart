@@ -178,115 +178,120 @@ class _AdminHomeState extends State<AdminHome> {
       backgroundColor: const Color(0xFFF5F7FA),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF1172D4)))
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+          : Container(
+              color: Colors.white,
+              child: RefreshIndicator(
+                color: const Color(0xFF1172D4),
+                backgroundColor: Colors.white,
+                onRefresh: _loadData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
 
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: aspect,
-                      children: [
-                        _metricCard(
-                          "Total Customers",
-                          totalCustomers.toString(),
-                          Icons.people_alt,
-                          Colors.blue,
-                          "+$newCustomersThisMonth new",
-                        ),
-                        _metricCard(
-                          "Approved Vehicles",
-                          totalApprovedVehicles.toString(),
-                          Icons.directions_car,
-                          Colors.teal,
-                        ),
-                        _metricCard(
-                          "Today's Bookings",
-                          totalBookingsToday.toString(),
-                          Icons.event_available,
-                          Colors.green,
-                        ),
-                        _metricCard(
-                          "Pending Requests",
-                          pendingRequests.toString(),
-                          Icons.pending_actions,
-                          Colors.orange,
-                        ),
-                        _metricCard(
-                          "Active Campaigns",
-                          activeCampaigns.toString(),
-                          Icons.campaign,
-                          Colors.purple,
-                        ),
-                        _metricCard(
-                          "Services This Month",
-                          servicesThisMonth.toString(),
-                          Icons.check_circle,
-                          Colors.indigo,
-                        ),
-                      ],
-                    ),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: aspect,
+                        children: [
+                          _metricCard(
+                            "Total Customers",
+                            totalCustomers.toString(),
+                            Icons.people_alt,
+                            Colors.blue,
+                            "+$newCustomersThisMonth new",
+                          ),
+                          _metricCard(
+                            "Approved Vehicles",
+                            totalApprovedVehicles.toString(),
+                            Icons.directions_car,
+                            Colors.teal,
+                          ),
+                          _metricCard(
+                            "Today's Bookings",
+                            totalBookingsToday.toString(),
+                            Icons.event_available,
+                            Colors.green,
+                          ),
+                          _metricCard(
+                            "Pending Requests",
+                            pendingRequests.toString(),
+                            Icons.pending_actions,
+                            Colors.orange,
+                          ),
+                          _metricCard(
+                            "Active Campaigns",
+                            activeCampaigns.toString(),
+                            Icons.campaign,
+                            Colors.purple,
+                          ),
+                          _metricCard(
+                            "Services This Month",
+                            servicesThisMonth.toString(),
+                            Icons.check_circle,
+                            Colors.indigo,
+                          ),
+                        ],
+                      ),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    Card(
-                      color: Colors.white,
-                      elevation: 8,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Weekly Services & Maintenance',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              height: 160,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: List.generate(7, (i) {
-                                  final count = weeklyServices[i];
-                                  final height = maxBar > 0 ? (count / maxBar) * 110 : 0.0;
-                                  final dayLabel = DateFormat('E').format(
-                                      DateTime.now().subtract(Duration(days: 6 - i)));
-                                  return Column(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Container(
-                                        width: 28,
-                                        height: height,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF1172D4),
-                                          borderRadius: BorderRadius.circular(6),
+                      Card(
+                        color: Colors.white,
+                        elevation: 8,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Weekly Services & Maintenance',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 160,
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: List.generate(7, (i) {
+                                    final count = weeklyServices[i];
+                                    final height = maxBar > 0 ? (count / maxBar) * 110 : 0.0;
+                                    final dayLabel = DateFormat('E').format(
+                                        DateTime.now().subtract(Duration(days: 6 - i)));
+                                    return Column(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Container(
+                                          width: 28,
+                                          height: height,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF1172D4),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(count.toString(),
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold, fontSize: 11)),
-                                      Text(dayLabel,
-                                          style:
-                                              const TextStyle(fontSize: 10, color: Colors.grey)),
-                                    ],
-                                  );
-                                }),
+                                        const SizedBox(height: 6),
+                                        Text(count.toString(),
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold, fontSize: 11)),
+                                        Text(dayLabel,
+                                            style:
+                                                const TextStyle(fontSize: 10, color: Colors.grey)),
+                                      ],
+                                    );
+                                  }),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
