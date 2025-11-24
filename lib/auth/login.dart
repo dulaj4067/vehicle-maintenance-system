@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,27 +26,29 @@ class _LoginPageState extends State<LoginPage> {
   static const String _cacheStatusKey = 'user_status';
   static const String _cacheLastCheckKey = 'user_last_check';
 
-  Future<void> _saveFcmToken() async {
-    try {
-      final fcmToken = await FirebaseMessaging.instance.getToken();
-      if (fcmToken != null) {
-        final userId = supabase.auth.currentUser!.id;
-        await supabase
-            .from('profiles')
-            .update({'fcm_token': fcmToken})
-            .eq('id', userId);
-      }
-    } catch (e) {
-      print('Error saving FCM token: $e');
-    }
-  }
-
   Future<void> _clearCache() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_cacheRoleKey);
     await prefs.remove(_cacheStatusKey);
     await prefs.remove(_cacheLastCheckKey);
   }
+
+  Future<void> _saveOneSignalId(String userId) async {
+  try {
+    // Login helps OneSignal track this specific user across devices
+    OneSignal.login(userId);
+
+    final id = OneSignal.User.pushSubscription.id;
+    if (id != null) {
+      await supabase
+          .from('profiles')
+          .update({'notification_id': id})
+          .eq('id', userId);
+    }
+  } catch (e) {
+    print('Error saving notification ID: $e');
+  }
+}
 
   Future<void> _updateCache(String role, String status) async {
     final prefs = await SharedPreferences.getInstance();
@@ -127,7 +129,8 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       await _updateCache(role, status);
-      await _saveFcmToken();
+
+      await _saveOneSignalId(user.id);
 
       if (!mounted) return;
       context.go(role == 'admin' ? '/admin' : '/customer');
