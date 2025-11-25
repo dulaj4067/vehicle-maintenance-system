@@ -295,7 +295,18 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
         title: const Text('Reject Request'),
         content: TextField(
           controller: reasonCtrl,
-          decoration: const InputDecoration(hintText: 'Reason (optional)'),
+          style: const TextStyle(color: Colors.black), // Text color
+          cursorColor: Colors.black, // Cursor color
+          decoration: InputDecoration(
+            hintText: 'Reason (optional)',
+            hintStyle: TextStyle(color: Colors.grey[600]),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey[400]!),
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.black),
+            ),
+          ),
           maxLines: 3,
         ),
         actions: [
@@ -546,6 +557,8 @@ class _BookingRequestManagementScreenState extends State<BookingRequestManagemen
             labelStyle: const TextStyle(fontWeight: FontWeight.w600),
             indicatorColor: const Color(0xFF1172D4),
             indicatorWeight: 3,
+            splashFactory: NoSplash.splashFactory,
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
             tabs: const [
               Tab(text: 'Pending'),
               Tab(text: 'Active / History'),
