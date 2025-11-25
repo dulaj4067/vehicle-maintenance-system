@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../theme_color.dart'; 
+import '../../theme_color.dart';
+import 'package:cached_network_image/cached_network_image.dart'; 
 
 class NoGlowScrollBehavior extends ScrollBehavior {
   @override
@@ -56,7 +57,7 @@ class _CustomerHomeState extends State<CustomerHome> {
   @override
   void initState() {
     super.initState();
-    offersController = PageController(viewportFraction: 0.8);
+    offersController = PageController();
     userId = supabase.auth.currentUser?.id;
     if (userId != null) {
       _loadData();
@@ -129,7 +130,7 @@ class _CustomerHomeState extends State<CustomerHome> {
         final DateTime created = DateTime.parse(s['created_at']);
         final int daysAgo = now.difference(created).inDays;
         String subtitle;
-        Color iconColor = ThemeColorManager.getColor();
+        Color iconColor = ThemeColorManager.getSafeColor();
         if (daysAgo > 30) {
           subtitle = 'Overdue';
           iconColor = Colors.red;
@@ -154,6 +155,55 @@ class _CustomerHomeState extends State<CustomerHome> {
         });
       }
     }
+  }
+
+void _showOfferImageDialog(
+    BuildContext context,
+    String imageUrl,
+    String title,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent, 
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(0.0)),
+          ),
+          elevation: 0, 
+          
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).pop(); 
+            },
+            child: CachedNetworkImage(
+              imageUrl: imageUrl,
+              fit: BoxFit.contain, 
+              placeholder: (context, url) => SizedBox(
+                  height: 300,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: ThemeColorManager.getSafeColor(),
+                    ),
+                  ),
+              ),
+              errorWidget: (context, url, error) => Center(
+                child: Container(
+                  color: ThemeColorManager.getColor(),
+                  child: Center(
+                    child: FaIcon(
+                      FontAwesomeIcons.image,
+                      color: ThemeColorManager.getSafeColor(),
+                      size: 60,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   String _getServiceTitle(String type) {
@@ -303,6 +353,7 @@ class _CustomerHomeState extends State<CustomerHome> {
                             height: 200,
                             child: PageView.builder(
                               controller: offersController,
+                              itemCount: offerData.length,
                               itemBuilder: (context, index) {
                                 final int actualIndex =
                                     index % offerData.length;
@@ -574,7 +625,7 @@ class _CustomerHomeState extends State<CustomerHome> {
               ),
               const SizedBox(height: 4),
                Text(
-                'This service for your vehicle is pending. Please book an appointment at your earliest convenience to keep your car in top condition.',
+                'This service has been approved. Please come at your earliest convenience to keep your car in top condition.',
                 style: TextStyle(
                   color: ThemeColorManager.getSafeColor(),
                   fontSize: 15,
@@ -694,63 +745,59 @@ class _CustomerHomeState extends State<CustomerHome> {
       color: ThemeColorManager.getSafeColor(),
     );
   }
-
-  Widget _buildOfferCard(
+Widget _buildOfferCard(
     String imageUrl,
     String title,
     String subtitle,
   ) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12.0),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: ThemeColorManager.getSafeColor(),
-            width: 1,
+    return GestureDetector(
+      onTap: () {
+        _showOfferImageDialog(context, imageUrl, title);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0), 
+        child: Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: ThemeColorManager.getSafeColor(),
+              width: 1,
+            ),
           ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Image.network(
-                imageUrl,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Center(
                     child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
+                      color: ThemeColorManager.getSafeColor(),
                     ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: ThemeColorManager.getSafeColor(),
-                    child:  Center(
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: ThemeColorManager.getColor(),
+                    child: Center(
                       child: FaIcon(
                         FontAwesomeIcons.image,
                         color: ThemeColorManager.getSafeColor(),
                         size: 40,
                       ),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-
+  
   Widget _buildServiceTile(
     BuildContext context,
     String title,
