@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../theme_color.dart';
-import 'package:cached_network_image/cached_network_image.dart'; 
+import 'package:cached_network_image/cached_network_image.dart';
 
 class NoGlowScrollBehavior extends ScrollBehavior {
   @override
@@ -21,6 +20,12 @@ class CustomerHome extends StatefulWidget {
 }
 
 class _CustomerHomeState extends State<CustomerHome> {
+  final Color _scaffoldBgColor = const Color(0xFF060606);
+  final Color _primaryTextColor = const Color(0xFFF5F0EB);
+  final Color _accentColor = const Color(0xFFC0A068);
+  final Color _silverColor = const Color(0xFFC0C0C0);
+  final Color _goldColor = const Color(0xFFFFD700);
+
   final supabase = Supabase.instance.client;
   String? userId;
   String fullName = '';
@@ -30,33 +35,36 @@ class _CustomerHomeState extends State<CustomerHome> {
   bool isLoading = true;
   late PageController offersController;
   int currentPoints = 0;
-  final List<Map<String, dynamic>> membershipData = [
-    {
-      'level': 'gold',
-      'title': 'Gold',
-      'color': Colors.amber.shade700,
-      'subtitle': 'Earn points on every service',
-      'icon': FontAwesomeIcons.solidStar,
-    },
-    {
-      'level': 'silver',
-      'title': 'Silver',
-      'color': ThemeColorManager.getSafeColor(),
-      'subtitle': 'Earn points on every service',
-      'icon': FontAwesomeIcons.solidStar,
-    },
-    {
-      'level': 'bronze',
-      'title': 'Bronze',
-      'color': const Color(0xFFCD7F32),
-      'subtitle': 'Earn points on every service',
-      'icon': FontAwesomeIcons.solidStar,
-    },
-  ];
+  late final List<Map<String, dynamic>> membershipData;
 
   @override
   void initState() {
     super.initState();
+
+    membershipData = [
+      {
+        'level': 'gold',
+        'title': 'Gold',
+        'color': _goldColor,
+        'subtitle': 'Earn points on every service',
+        'icon': FontAwesomeIcons.solidStar,
+      },
+      {
+        'level': 'silver',
+        'title': 'Silver',
+        'color': _silverColor,
+        'subtitle': 'Earn points on every service',
+        'icon': FontAwesomeIcons.solidStar,
+      },
+      {
+        'level': 'bronze',
+        'title': 'Bronze',
+        'color': _accentColor,
+        'subtitle': 'Earn points on every service',
+        'icon': FontAwesomeIcons.solidStar,
+      },
+    ];
+
     offersController = PageController();
     userId = supabase.auth.currentUser?.id;
     if (userId != null) {
@@ -92,10 +100,10 @@ class _CustomerHomeState extends State<CustomerHome> {
       loyaltyLevel = profileResponse['loyalty_level'] ?? 'bronze';
 
       final pointsResponse = await supabase
-      .from('loyalty_points')
-      .select('points')
-      .eq('profile_id', userId!)
-      .maybeSingle();
+          .from('loyalty_points')
+          .select('points')
+          .eq('profile_id', userId!)
+          .maybeSingle();
 
       currentPoints = pointsResponse?['points'] ?? 0;
 
@@ -109,7 +117,8 @@ class _CustomerHomeState extends State<CustomerHome> {
 
       offerData = campaignsResponse.map((c) {
         return {
-          'image': c['image_url'] as String? ?? 'https://picsum.photos/id/13/600/400',
+          'image':
+              c['image_url'] as String? ?? 'https://picsum.photos/id/13/600/400',
           'title': c['title'] as String,
           'subtitle': 'Valid until ${c['end_date'] as String}',
         };
@@ -130,7 +139,7 @@ class _CustomerHomeState extends State<CustomerHome> {
         final DateTime created = DateTime.parse(s['created_at']);
         final int daysAgo = now.difference(created).inDays;
         String subtitle;
-        Color iconColor = ThemeColorManager.getSafeColor();
+        Color iconColor = _primaryTextColor;
         if (daysAgo > 30) {
           subtitle = 'Overdue';
           iconColor = Colors.red;
@@ -157,7 +166,7 @@ class _CustomerHomeState extends State<CustomerHome> {
     }
   }
 
-void _showOfferImageDialog(
+  void _showOfferImageDialog(
     BuildContext context,
     String imageUrl,
     String title,
@@ -166,34 +175,33 @@ void _showOfferImageDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: Colors.transparent, 
+          backgroundColor: Colors.transparent,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(0.0)),
           ),
-          elevation: 0, 
-          
+          elevation: 0,
           child: GestureDetector(
             onTap: () {
-              Navigator.of(context).pop(); 
+              Navigator.of(context).pop();
             },
             child: CachedNetworkImage(
               imageUrl: imageUrl,
-              fit: BoxFit.contain, 
+              fit: BoxFit.contain,
               placeholder: (context, url) => SizedBox(
-                  height: 300,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: ThemeColorManager.getSafeColor(),
-                    ),
+                height: 300,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: _accentColor,
                   ),
+                ),
               ),
               errorWidget: (context, url, error) => Center(
                 child: Container(
-                  color: ThemeColorManager.getColor(),
+                  color: _scaffoldBgColor, 
                   child: Center(
                     child: FaIcon(
                       FontAwesomeIcons.image,
-                      color: ThemeColorManager.getSafeColor(),
+                      color: _accentColor, 
                       size: 60,
                     ),
                   ),
@@ -239,11 +247,11 @@ void _showOfferImageDialog(
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return  Scaffold(
-        backgroundColor:ThemeColorManager.getColor(),
+      return Scaffold(
+        backgroundColor: _scaffoldBgColor, 
         body: Center(
           child: CircularProgressIndicator(
-            color: ThemeColorManager.getSafeColor(),
+            color: _accentColor, 
           ),
         ),
       );
@@ -260,40 +268,41 @@ void _showOfferImageDialog(
     return ScrollConfiguration(
       behavior: NoGlowScrollBehavior(),
       child: Scaffold(
-        backgroundColor: ThemeColorManager.getColor(),
+        backgroundColor: _scaffoldBgColor,
         appBar: AppBar(
-          backgroundColor: ThemeColorManager.getColor(),
-          surfaceTintColor: ThemeColorManager.getColor(),
+          backgroundColor: _scaffoldBgColor, 
+          surfaceTintColor: _scaffoldBgColor, 
           elevation: 0,
           systemOverlayStyle: const SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.dark,
+            statusBarIconBrightness:
+                Brightness.light, 
           ),
           toolbarHeight: 80.0,
           title: Padding(
             padding: const EdgeInsets.only(top: 10),
             child: Text(
               'Hello, $fullName!',
-              style:  TextStyle(
+              style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: ThemeColorManager.getSafeColor(),
+                color: _primaryTextColor, 
               ),
             ),
           ),
           bottom: PreferredSize(
-            preferredSize: Size.fromHeight(1),
+            preferredSize: const Size.fromHeight(1),
             child: Container(
-              margin: EdgeInsets.symmetric(horizontal: 10),
-              color: ThemeColorManager.getSafeColor(),
-              height: 0.5,
+              margin: const EdgeInsets.symmetric(horizontal: 10),
+              color: _accentColor, 
+              height: 1.0, 
             ),
           ),
         ),
         body: RefreshIndicator(
           onRefresh: _loadData,
-          color: ThemeColorManager.getSafeColor(),
-          backgroundColor: ThemeColorManager.getColor(),
+          color: _accentColor, 
+          backgroundColor: _scaffoldBgColor, 
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 14.0),
@@ -304,48 +313,49 @@ void _showOfferImageDialog(
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                     Text(
+                    Text(
                       'Offers',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        color: ThemeColorManager.getSafeColor(),
+                        color: _primaryTextColor, 
                       ),
                     ),
                     const SizedBox(height: 12),
                     if (offerData.isEmpty)
-                    Center(
-                      child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: ThemeColorManager.getColor(),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: ThemeColorManager.getSafeColor(),
-                          width: 1,
-                        ),
-                      ),
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                           FaIcon(
-                            FontAwesomeIcons.tag,
-                            size: 48,
-                            color: ThemeColorManager.getSafeColor(),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'No offers available at the moment.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: ThemeColorManager.getSafeColor(),
+                      Center(
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: _scaffoldBgColor, 
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _accentColor, 
+                              width: 1,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    )
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              FaIcon(
+                                FontAwesomeIcons.tag,
+                                size: 48,
+                                color: _accentColor, 
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No offers available at the moment.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color:
+                                      _primaryTextColor, 
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
                     else
                       Column(
                         children: [
@@ -375,8 +385,8 @@ void _showOfferImageDialog(
                                   page.round() % offerData.length;
                               return Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                children: List.generate(
-                                    offerData.length, (index) {
+                                children: List.generate(offerData.length,
+                                    (index) {
                                   return AnimatedContainer(
                                     duration:
                                         const Duration(milliseconds: 300),
@@ -386,8 +396,9 @@ void _showOfferImageDialog(
                                     width: currentIndex == index ? 24 : 6,
                                     decoration: BoxDecoration(
                                       color: currentIndex == index
-                                          ? const Color.fromARGB(255, 0, 0, 0)
-                                          : ThemeColorManager.getSafeColor(),
+                                          ? _accentColor 
+                                          : _primaryTextColor
+                                              .withAlpha(100), 
                                       borderRadius:
                                           BorderRadius.circular(3),
                                     ),
@@ -403,12 +414,12 @@ void _showOfferImageDialog(
                 const SizedBox(height: 24),
                 _buildDivider(),
                 const SizedBox(height: 16),
-                 Text(
+                Text(
                   'Membership',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: ThemeColorManager.getSafeColor(),
+                    color: _primaryTextColor, 
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -427,7 +438,7 @@ void _showOfferImageDialog(
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                     Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
@@ -435,60 +446,65 @@ void _showOfferImageDialog(
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
-                            color: ThemeColorManager.getSafeColor(),
+                            color:
+                                _primaryTextColor, 
                           ),
                         ),
-                        Spacer(),
+                        const Spacer(),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Card(
                       elevation: 0,
-                      color: ThemeColorManager.getColor(),
-                      surfaceTintColor: ThemeColorManager.getColor(),
+                      color: _scaffoldBgColor, 
+                      surfaceTintColor: _scaffoldBgColor, 
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(
-                          color: ThemeColorManager.getSafeColor(),
-                          width: 1,           
+                          color: _accentColor,
+                          width: 1,
                         ),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: serviceData.isEmpty
                           ? Center(
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: ThemeColorManager.getColor(),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: ThemeColorManager.getColor()),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children:  [
-                                    FaIcon(
-                                      FontAwesomeIcons.clipboardList,
-                                      size: 48,
-                                      color: ThemeColorManager.getSafeColor(),
-                                    ),
-                                    SizedBox(height: 12),
-                                    Text(
-                                      'No pending services.',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: ThemeColorManager.getSafeColor(),
+                              child: Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: _scaffoldBgColor, 
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: _scaffoldBgColor), 
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      FaIcon(
+                                        FontAwesomeIcons.clipboardList,
+                                        size: 48,
+                                        color: _accentColor, 
                                       ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'No pending services.',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color:
+                                              _primaryTextColor, 
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          )
+                            )
                           : ListView.separated(
                               physics:
                                   const NeverScrollableScrollPhysics(),
@@ -506,8 +522,13 @@ void _showOfferImageDialog(
                                 );
                               },
                               separatorBuilder: (context, index) {
-                                return const Divider(
-                                    height: 1, indent: 10, endIndent: 10);
+                                return Divider(
+                                  height: 1,
+                                  indent: 10,
+                                  endIndent: 10,
+                                  color: _accentColor
+                                      .withAlpha(50), 
+                                );
                               },
                             ),
                     ),
@@ -536,10 +557,13 @@ void _showOfferImageDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: ThemeColorManager.getColor(),
-          surfaceTintColor: ThemeColorManager.getColor(),
+          backgroundColor:
+              _scaffoldBgColor, 
+          surfaceTintColor:
+              _scaffoldBgColor, 
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
+             side: BorderSide(color: _accentColor, width: 1), 
           ),
           title: Row(
             children: [
@@ -547,9 +571,9 @@ void _showOfferImageDialog(
               const SizedBox(width: 10),
               Text(
                 title,
-                style:  TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: ThemeColorManager.getSafeColor(),
+                  color: _primaryTextColor, 
                 ),
               ),
             ],
@@ -558,19 +582,21 @@ void _showOfferImageDialog(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-               Text(
+              Text(
                 'Status',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: ThemeColorManager.getSafeColor(),
+                  color: _primaryTextColor, 
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
                 style: TextStyle(
-                  color: isOverdue ? Colors.red.shade400 : ThemeColorManager.getSafeColor(),
+                  color: isOverdue
+                      ? Colors.red.shade400
+                      : _primaryTextColor, 
                   fontWeight:
                       isOverdue ? FontWeight.bold : FontWeight.normal,
                   fontSize: 15,
@@ -578,56 +604,56 @@ void _showOfferImageDialog(
               ),
               if (vehicle != null) ...[
                 const SizedBox(height: 16),
-                 Text(
+                Text(
                   'Vehicle',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: ThemeColorManager.getSafeColor(),
+                    color: _primaryTextColor, 
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${vehicle['make']} ${vehicle['model']} (${vehicle['year']})',
-                  style:  TextStyle(
-                    color: ThemeColorManager.getSafeColor(),
+                  style: TextStyle(
+                    color: _primaryTextColor, 
                     fontSize: 15,
                   ),
                 ),
               ],
               if (description.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                 Text(
+                Text(
                   'Description',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: ThemeColorManager.getSafeColor(),
+                    color: _primaryTextColor, 
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style:  TextStyle(
-                    color: ThemeColorManager.getSafeColor(),
+                  style: TextStyle(
+                    color: _primaryTextColor, 
                     fontSize: 15,
                   ),
                 ),
               ],
               const SizedBox(height: 16),
-               Text(
+              Text(
                 'Details',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: ThemeColorManager.getSafeColor(),
+                  color: _primaryTextColor, 
                 ),
               ),
               const SizedBox(height: 4),
-               Text(
+              Text(
                 'This service has been approved. Please come at your earliest convenience to keep your car in top condition.',
                 style: TextStyle(
-                  color: ThemeColorManager.getSafeColor(),
+                  color: _primaryTextColor, 
                   fontSize: 15,
                 ),
               ),
@@ -638,10 +664,10 @@ void _showOfferImageDialog(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text(
+              child: Text(
                 'Close',
                 style: TextStyle(
-                  color: Color(0xFF007AFF),
+                  color: _accentColor, 
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -662,13 +688,15 @@ void _showOfferImageDialog(
   ) {
     return Card(
       elevation: 0,
-      color: ThemeColorManager.getColor(),
-      surfaceTintColor: ThemeColorManager.getColor(),
+      color: _scaffoldBgColor, 
+      surfaceTintColor: _scaffoldBgColor, 
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isCurrent ? color : ThemeColorManager.getSafeColor(),
-          width: isCurrent ? 2 : 1,
+          color: isCurrent
+              ? color
+              : _primaryTextColor.withAlpha(100), 
+          width: isCurrent ? 1.0 : 0.5, 
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -677,7 +705,7 @@ void _showOfferImageDialog(
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: color.withAlpha(30),
+              backgroundColor: color.withAlpha(30), 
               radius: 20,
               child: FaIcon(
                 icon,
@@ -695,7 +723,7 @@ void _showOfferImageDialog(
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: color,
+                      color: color, 
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -703,22 +731,24 @@ void _showOfferImageDialog(
                     subtitle,
                     style: TextStyle(
                       fontSize: 14,
-                      color: ThemeColorManager.getSafeColor(),
+                      color: _primaryTextColor, 
                     ),
                   ),
                   const SizedBox(height: 12),
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.grey, width: 2),
+                      border: Border.all(color: color, width: 1),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius:
+                          BorderRadius.circular(5), 
                       child: LinearProgressIndicator(
                         value: points / 100.0,
                         minHeight: 8,
-                        backgroundColor: ThemeColorManager.getColor(),
-                        valueColor: AlwaysStoppedAnimation(color.withValues()),
+                        backgroundColor: _scaffoldBgColor, 
+                        valueColor:
+                            AlwaysStoppedAnimation(color), 
                       ),
                     ),
                   ),
@@ -727,12 +757,12 @@ void _showOfferImageDialog(
                     '$points / 100 points',
                     style: TextStyle(
                       fontSize: 12,
-                      color: ThemeColorManager.getSafeColor(),
+                      color: _primaryTextColor, 
                     ),
                   ),
                 ],
               ),
-            ),          
+            ),
           ],
         ),
       ),
@@ -742,10 +772,11 @@ void _showOfferImageDialog(
   Widget _buildDivider() {
     return Container(
       height: 1,
-      color: ThemeColorManager.getSafeColor(),
+      color: _accentColor.withAlpha(150), 
     );
   }
-Widget _buildOfferCard(
+
+  Widget _buildOfferCard(
     String imageUrl,
     String title,
     String subtitle,
@@ -755,13 +786,13 @@ Widget _buildOfferCard(
         _showOfferImageDialog(context, imageUrl, title);
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0), 
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
-              color: ThemeColorManager.getSafeColor(),
+              color: _accentColor, 
               width: 1,
             ),
           ),
@@ -773,18 +804,18 @@ Widget _buildOfferCard(
                 child: CachedNetworkImage(
                   imageUrl: imageUrl,
                   width: double.infinity,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.cover, 
                   placeholder: (context, url) => Center(
                     child: CircularProgressIndicator(
-                      color: ThemeColorManager.getSafeColor(),
+                      color: _accentColor, 
                     ),
                   ),
                   errorWidget: (context, url, error) => Container(
-                    color: ThemeColorManager.getColor(),
+                    color: _scaffoldBgColor,
                     child: Center(
                       child: FaIcon(
                         FontAwesomeIcons.image,
-                        color: ThemeColorManager.getSafeColor(),
+                        color: _accentColor, 
                         size: 40,
                       ),
                     ),
@@ -797,7 +828,7 @@ Widget _buildOfferCard(
       ),
     );
   }
-  
+
   Widget _buildServiceTile(
     BuildContext context,
     String title,
@@ -809,27 +840,29 @@ Widget _buildOfferCard(
     final bool isOverdue = subtitle.contains('Overdue');
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: color.withAlpha(25),
+        backgroundColor: color.withAlpha(25), 
         child: FaIcon(icon, color: color),
       ),
       title: Text(
         title,
-        style:  TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w600,
-          color: ThemeColorManager.getSafeColor(),
+          color: _primaryTextColor, 
         ),
       ),
       subtitle: Text(
         subtitle,
         style: TextStyle(
-          color: isOverdue ? Colors.red.shade400 : ThemeColorManager.getSafeColor(),
+          color: isOverdue
+              ? Colors.red.shade400
+              : _primaryTextColor.withAlpha(150), 
           fontWeight: isOverdue ? FontWeight.bold : FontWeight.w500,
         ),
       ),
-      trailing:  FaIcon(
+      trailing: FaIcon(
         FontAwesomeIcons.arrowRight,
         size: 16,
-        color: ThemeColorManager.getSafeColor(),
+        color: _primaryTextColor, 
       ),
       onTap: () {
         _showServiceDetailsDialog(

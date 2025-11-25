@@ -22,6 +22,10 @@ class _LoginPageState extends State<LoginPage> {
   String? _passwordError;
   String? _generalError;
 
+  final Color _scaffoldBgColor = const Color(0xFF060606);
+  final Color _primaryTextColor = const Color(0xFFF5F0EB);
+  final Color _accentColor = const Color(0xFFC0A068);
+
   static const String _cacheRoleKey = 'user_role';
   static const String _cacheStatusKey = 'user_status';
   static const String _cacheLastCheckKey = 'user_last_check';
@@ -34,21 +38,20 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _saveOneSignalId(String userId) async {
-  try {
-    // Login helps OneSignal track this specific user across devices
-    OneSignal.login(userId);
+    try {
+      OneSignal.login(userId);
 
-    final id = OneSignal.User.pushSubscription.id;
-    if (id != null) {
-      await supabase
-          .from('profiles')
-          .update({'notification_id': id})
-          .eq('id', userId);
+      final id = OneSignal.User.pushSubscription.id;
+      if (id != null) {
+        await supabase
+            .from('profiles')
+            .update({'notification_id': id})
+            .eq('id', userId);
+      }
+    } catch (e) {
+      print('Error saving notification ID: $e');
     }
-  } catch (e) {
-    print('Error saving notification ID: $e');
   }
-}
 
   Future<void> _updateCache(String role, String status) async {
     final prefs = await SharedPreferences.getInstance();
@@ -118,13 +121,13 @@ class _LoginPageState extends State<LoginPage> {
         await _clearCache();
         if (!mounted) return;
         Fluttertoast.showToast(
-        msg: 'Account not accepted yet',
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.TOP,
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+          msg: 'Account not accepted yet',
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: _primaryTextColor,
+          fontSize: 16.0,
+        );
         return;
       }
 
@@ -151,13 +154,13 @@ class _LoginPageState extends State<LoginPage> {
       }
       if (mounted) {
         Fluttertoast.showToast(
-        msg: errorMsg,
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.TOP,
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+          msg: errorMsg,
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: _primaryTextColor,
+          fontSize: 16.0,
+        );
       }
     } catch (e) {
       await _clearCache();
@@ -168,8 +171,8 @@ class _LoginPageState extends State<LoginPage> {
           msg: 'An unexpected error occurred',
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.TOP,
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
+          backgroundColor: Colors.red,
+          textColor: _primaryTextColor,
           fontSize: 16.0,
         );
       }
@@ -187,9 +190,23 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final inputDecoration = InputDecoration(
+      labelStyle: TextStyle(color: _primaryTextColor.withAlpha(179)),
+      hintStyle: TextStyle(color: _primaryTextColor.withAlpha(100)),
+      errorStyle: const TextStyle(color: Colors.redAccent),
+      border: OutlineInputBorder(
+        borderSide: BorderSide(color: _primaryTextColor.withAlpha(77)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: _primaryTextColor.withAlpha(77)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: _accentColor),
+      ),
+    );
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      
+      backgroundColor: _scaffoldBgColor,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -198,34 +215,36 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 60),
-              const Center(
+              Center(
                 child: Text(
                   'Your App Name', 
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 28, 
+                    fontWeight: FontWeight.bold,
+                    color: _primaryTextColor,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
               
-              const Center(
+              Center(
                 child: Icon(
                   Icons.account_circle,
                   size: 80,
-                  color: Colors.grey,
+                  color: _accentColor,
                 ),
               ),
               const SizedBox(height: 40),
 
               TextFormField(
                 controller: emailCtrl,
+                style: TextStyle(color: _primaryTextColor),
+                cursorColor: _accentColor,
                 keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
+                decoration: inputDecoration.copyWith(
                   labelText: 'Email or Username',
                   hintText: 'Enter your email or username',
                   errorText: _emailError,
-                  border: const OutlineInputBorder(),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue),
-                  ),
                 ),
                 validator: _validateEmail,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -234,15 +253,13 @@ class _LoginPageState extends State<LoginPage> {
 
               TextFormField(
                 controller: passwordCtrl,
+                style: TextStyle(color: _primaryTextColor),
+                cursorColor: _accentColor,
                 obscureText: true,
-                decoration: InputDecoration(
+                decoration: inputDecoration.copyWith(
                   labelText: 'Password',
                   hintText: 'Enter your password',
                   errorText: _passwordError,
-                  border: const OutlineInputBorder(),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue),
-                  ),
                 ),
                 validator: _validatePassword,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -252,16 +269,18 @@ class _LoginPageState extends State<LoginPage> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
-                    
                     Fluttertoast.showToast(
-                    msg: 'Forgot Password functionality coming soon',
-                    toastLength: Toast.LENGTH_LONG,
-                    gravity: ToastGravity.TOP,
-                    backgroundColor: Colors.black,
-                    textColor: Colors.white,
-                    fontSize: 16.0,
-                  );
+                      msg: 'Forgot Password functionality coming soon',
+                      toastLength: Toast.LENGTH_LONG,
+                      gravity: ToastGravity.TOP,
+                      backgroundColor: _accentColor,
+                      textColor: _scaffoldBgColor,
+                      fontSize: 16.0,
+                    );
                   },
+                  style: TextButton.styleFrom(
+                    foregroundColor: _accentColor,
+                  ),
                   child: const Text('Forgot Password?'),
                 ),
               ),
@@ -269,7 +288,7 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 8),
                 Text(
                   _generalError!,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.redAccent),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -278,28 +297,32 @@ class _LoginPageState extends State<LoginPage> {
               ElevatedButton(
                 onPressed: loading ? null : _login,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
+                  backgroundColor: _accentColor,
+                  foregroundColor: _scaffoldBgColor,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
+                  disabledBackgroundColor: _accentColor.withAlpha(128),
                 ),
                 child: loading
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: _scaffoldBgColor,
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text('Login', style: TextStyle(fontSize: 16)),
+                    : const Text('Login', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 16),
 
               TextButton(
                 onPressed: () => context.go('/register'),
+                style: TextButton.styleFrom(
+                  foregroundColor: _accentColor,
+                ),
                 child: const Text('Don\'t have an account? Sign Up'),
               ),
             ],

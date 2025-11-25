@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../theme_color.dart'; 
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -15,6 +14,10 @@ class CustomerSettings extends StatefulWidget {
 }
 
 class _CustomerSettingsState extends State<CustomerSettings> {
+  final Color _scaffoldBgColor = const Color(0xFF060606);
+  final Color _primaryTextColor = const Color(0xFFF5F0EB);
+  final Color _accentColor = const Color(0xFFC0A068);
+
   static const String _cacheRoleKey = 'user_role';
   static const String _cacheStatusKey = 'user_status';
   static const String _cacheLastCheckKey = 'user_last_check';
@@ -61,8 +64,8 @@ class _CustomerSettingsState extends State<CustomerSettings> {
         msg: value ? 'Notifications enabled' : 'Notifications disabled',
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.TOP,
-        backgroundColor: ThemeColorManager.getSafeColor(),
-        textColor: ThemeColorManager.getColor(),
+        backgroundColor: _accentColor,
+        textColor: _scaffoldBgColor,
         fontSize: 16.0,
       );
     }
@@ -72,24 +75,24 @@ class _CustomerSettingsState extends State<CustomerSettings> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ThemeColorManager.getColor(),
+        backgroundColor: _scaffoldBgColor,
         title: Text('Permission Required', 
-          style: TextStyle(color: ThemeColorManager.getSafeColor())),
+          style: TextStyle(color: _primaryTextColor)),
         content: Text(
           'Notifications are disabled in system settings. Please enable them to receive updates.',
-          style: TextStyle(color: ThemeColorManager.getSafeColor()),
+          style: TextStyle(color: _primaryTextColor),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: ThemeColorManager.getSafeColor())),
+            child: Text('Cancel', style: TextStyle(color: _accentColor)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               openAppSettings(); 
             },
-            child: Text('Open Settings', style: TextStyle(color: ThemeColorManager.getSafeColor())),
+            child: Text('Open Settings', style: TextStyle(color: _accentColor)),
           ),
         ],
       ),
@@ -111,7 +114,6 @@ class _CustomerSettingsState extends State<CustomerSettings> {
     try {
       await supabase.auth.signOut();
       await _clearCache();
-      await ThemeColorManager.resetToDefault();
       if (!mounted) return;
       context.go('/login');
     } catch (e) {
@@ -120,8 +122,8 @@ class _CustomerSettingsState extends State<CustomerSettings> {
         msg: 'Logout failed: $e',
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.TOP,
-        backgroundColor: ThemeColorManager.getSafeColor(),
-        textColor: ThemeColorManager.getColor(),
+        backgroundColor: Colors.red,
+        textColor: _primaryTextColor,
         fontSize: 16.0,
       );
       setState(() => _isLoading = false);
@@ -132,18 +134,18 @@ class _CustomerSettingsState extends State<CustomerSettings> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ThemeColorManager.getColor(),
-        title:  Text('Log out',style: TextStyle(color: ThemeColorManager.getSafeColor())),
-        content:  Text('Are you sure you want to log out?',style: TextStyle(color: ThemeColorManager.getSafeColor())),
+        backgroundColor: _scaffoldBgColor,
+        title:  Text('Log out',style: TextStyle(color: _primaryTextColor)),
+        content:  Text('Are you sure you want to log out?',style: TextStyle(color: _primaryTextColor)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child:  Text('Cancel', style: TextStyle(color: ThemeColorManager.getSafeColor())),
+            child:  Text('Cancel', style: TextStyle(color: _accentColor)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child:  Text('Log Out', style: TextStyle(color: ThemeColorManager.getSafeColor())),
+            child:  Text('Log Out', style: TextStyle(color: _accentColor)),
           ),
         ],
       ),
@@ -156,25 +158,29 @@ class _CustomerSettingsState extends State<CustomerSettings> {
 
   @override
   Widget build(BuildContext context) {
+    final Color bgColor = _scaffoldBgColor;
+    final Color textColor = _primaryTextColor;
+    final Color accentColor = _accentColor;
+
     return Scaffold(
-      backgroundColor: ThemeColorManager.getColor(),
+      backgroundColor: bgColor,
       appBar: AppBar(
-      backgroundColor: ThemeColorManager.getColor(),
-      surfaceTintColor: ThemeColorManager.getColor(),
+      backgroundColor: bgColor,
+      surfaceTintColor: bgColor,
       elevation: 0,
-      systemOverlayStyle: const SystemUiOverlayStyle(
+      systemOverlayStyle: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.light, 
       ),
       toolbarHeight: 80.0,
       title:  Padding(
-        padding: EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.only(top: 10),
         child: Text(
           'Settings',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w600,
-            color: ThemeColorManager.getSafeColor(),
+            color: textColor,
           ),
         ),
       ),
@@ -183,47 +189,47 @@ class _CustomerSettingsState extends State<CustomerSettings> {
         preferredSize: const Size.fromHeight(1),
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 10),
-          color: Colors.grey,
+          color: accentColor,
           height: 0.5,
         ),
       ),
     ),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
+        ? Center(child: CircularProgressIndicator(color: accentColor))
         : ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              _buildSectionHeader('Preferences'),
+              _buildSectionHeader('Preferences', textColor),
               
               Container(
                 decoration: BoxDecoration(
-                  color: ThemeColorManager.getColor(),
+                  color: textColor.withAlpha(0x0D), 
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: ThemeColorManager.getColor()),
+                  border: Border.all(color: textColor.withAlpha(0x1A)),
                 ),
                 child: SwitchListTile.adaptive(
                   title:  Text(
                     'Push Notifications',
-                    style: TextStyle(fontWeight: FontWeight.w500,color: ThemeColorManager.getSafeColor()),
+                    style: TextStyle(fontWeight: FontWeight.w500,color: textColor),
                   ),
                   subtitle:  Text(
                     'Receive updates and alerts',
-                    style: TextStyle(fontSize: 12, color: ThemeColorManager.getSafeColor()),
+                    style: TextStyle(fontSize: 12, color: textColor.withAlpha(0x80)),
                   ),
                   value: _notificationsEnabled,
-                  activeThumbColor: ThemeColorManager.getColor(),
-                  inactiveTrackColor: ThemeColorManager.getColor(),
-                  activeTrackColor:ThemeColorManager.getSafeColor(),
-                  inactiveThumbColor: ThemeColorManager.getSafeColor(),
+                  activeThumbColor: accentColor,
+                  inactiveThumbColor: textColor.withAlpha(0xCC),
+                  activeTrackColor: accentColor.withAlpha(0x66),
+                  inactiveTrackColor: textColor.withAlpha(0x1A),
                   onChanged: _toggleNotifications,
-                  secondary:  Icon(Icons.notifications_outlined, color: ThemeColorManager.getSafeColor()),
+                  secondary:  Icon(Icons.notifications_outlined, color: accentColor),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
 
               const SizedBox(height: 32),
 
-              _buildSectionHeader('Account'),
+              _buildSectionHeader('Account', textColor),
 
               SizedBox(
                 width: double.infinity,
@@ -231,7 +237,7 @@ class _CustomerSettingsState extends State<CustomerSettings> {
                   onPressed: _showLogoutConfirmation,
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: ThemeColorManager.getSafeColor(),
+                    backgroundColor: accentColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -239,12 +245,12 @@ class _CustomerSettingsState extends State<CustomerSettings> {
                   child:  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.logout, color: ThemeColorManager.getSafeColor()),
-                      SizedBox(width: 8),
+                      Icon(Icons.logout, color: bgColor),
+                      const SizedBox(width: 8),
                       Text(
                         'Log Out',
                         style: TextStyle(
-                          color: ThemeColorManager.getColor(),
+                          color: bgColor,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -258,7 +264,7 @@ class _CustomerSettingsState extends State<CustomerSettings> {
               Center(
                 child: Text(
                   'Version 1.0.0',
-                  style: TextStyle(color: ThemeColorManager.getSafeColor(), fontSize: 12),
+                  style: TextStyle(color: textColor.withAlpha(0x80), fontSize: 12),
                 ),
               ),
             ],
@@ -266,13 +272,13 @@ class _CustomerSettingsState extends State<CustomerSettings> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, Color textColor) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0, left: 4),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
-          color: ThemeColorManager.getSafeColor(),
+          color: textColor.withAlpha(0x99),
           fontSize: 12,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.2,
