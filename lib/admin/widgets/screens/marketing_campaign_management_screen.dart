@@ -289,7 +289,7 @@ class _MarketingCampaignManagementScreenState
                 SwitchListTile(
                   title: const Text('Campaign Active', style: TextStyle(color: Colors.black)),
                   value: isActive,
-                  activeColor: Colors.black,
+                  activeThumbColor: Colors.black,
                   onChanged: (v) => setStateSheet(() => isActive = v),
                 ),
                 const SizedBox(height: 32),
