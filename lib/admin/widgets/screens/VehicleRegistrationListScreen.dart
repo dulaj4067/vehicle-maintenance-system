@@ -1,4 +1,5 @@
 // lib/admin/screens/vehicle_registration_list_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -39,7 +40,7 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
       if (!mounted) return;
       setState(() => loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error loading vehicles: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -54,7 +55,7 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Vehicle ${status == 'approved' ? 'Approved' : 'Rejected'}'),
+            content: Text('Vehicle ${status == 'approved' ? 'Approved' : 'Rejected'} Successfully'),
             backgroundColor: status == 'approved' ? Colors.green : Colors.red,
           ),
         );
@@ -98,35 +99,25 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
   }
 
   void _showVehicleDetails(Map<String, dynamic> v) {
-    // Parse documents - handle both direct array and nested structure
     List<Map<String, dynamic>> documentList = [];
 
     final rawDocs = v['documents'];
-    
     if (rawDocs != null) {
       if (rawDocs is List) {
-        // Direct array of documents
         for (var doc in rawDocs) {
           if (doc is Map<String, dynamic>) {
             final type = (doc['type'] ?? 'document').toString().toLowerCase();
             final url = doc['url']?.toString() ?? doc['s3_link']?.toString() ?? '';
-            if (url.isNotEmpty) {
-              documentList.add({'type': type, 'url': url});
-            }
+            if (url.isNotEmpty) documentList.add({'type': type, 'url': url});
           }
         }
       } else if (rawDocs is Map<String, dynamic>) {
-        // Nested structure - iterate through all keys
         rawDocs.forEach((key, value) {
           if (value is String && value.isNotEmpty) {
-            // This is a direct URL mapping like "rc_book": "url"
             documentList.add({'type': key, 'url': value});
           } else if (value is Map<String, dynamic>) {
-            // Nested object like "rc_book": {"url": "...", "type": "..."}
             final url = value['url']?.toString() ?? value['s3_link']?.toString() ?? '';
-            if (url.isNotEmpty) {
-              documentList.add({'type': key, 'url': url});
-            }
+            if (url.isNotEmpty) documentList.add({'type': key, 'url': url});
           }
         });
       }
@@ -150,29 +141,28 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
             children: [
               const _DragHandle(),
               const SizedBox(height: 20),
-
               Text('${v['make']} ${v['model']}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
               Text('${v['year']}', style: TextStyle(fontSize: 18, color: Colors.grey[600]), textAlign: TextAlign.center),
               const SizedBox(height: 24),
 
               // Owner Card
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 8))],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: Offset(0, 8))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(children: [
+                    Row(children: [
                       Icon(Icons.person_outline, color: Color(0xFF1172D4), size: 26),
                       SizedBox(width: 12),
-                      Text('Vehicle Owner', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold))
+                      Text('Vehicle Owner', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
                     ]),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     _infoRow(Icons.account_circle, v['owner_full_name'] ?? '—'),
                     _infoRow(Icons.phone, v['owner_phone'] ?? '—'),
                     _infoRow(Icons.email_outlined, v['owner_email'] ?? '—'),
@@ -180,38 +170,33 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
                 ),
               ),
 
-              const SizedBox(height: 32),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
-              const SizedBox(height: 16),
+              SizedBox(height: 32),
+              Divider(height: 1, color: Color(0xFFE5E7EB)),
+              SizedBox(height: 16),
 
               _infoRowBold('Number Plate', v['number_plate']?.toString().toUpperCase() ?? '—'),
               _infoRowBold('Color', (v['color']?.toString().split('.').last ?? 'Not specified').toTitleCase()),
 
-              const SizedBox(height: 32),
-              const Text('Verification Documents', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
+              SizedBox(height: 32),
+              Text('Verification Documents', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              SizedBox(height: 16),
 
               documentList.isEmpty
-                  ? const _EmptyDocumentsState()
-                  : Column(
-                      children: documentList.map((doc) {
-                        final String type = doc['type'];
-                        final String url = doc['url'];
-                        final fixedUrl = url
-                            .replaceAll('customer-documents', 'customer_documents')
-                            .replaceAll('vehicle-documents', 'vehicle_documents');
-                        return _buildDocumentCard(_formatDocType(type), fixedUrl);
-                      }).toList(),
-                    ),
+                  ? _EmptyDocumentsState()
+                  : Column(children: documentList.map((doc) {
+                      final fixedUrl = doc['url']
+                          .toString()
+                          .replaceAll('customer-documents', 'customer_documents')
+                          .replaceAll('vehicle-documents', 'vehicle_documents');
+                      return _buildDocumentCard(_formatDocType(doc['type']), fixedUrl);
+                    }).toList()),
 
-              const SizedBox(height: 60),
-              Row(
-                children: [
-                  Expanded(child: _rejectButton(v)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _approveButton(v)),
-                ],
-              ),
+              SizedBox(height: 60),
+              Row(children: [
+                Expanded(child: _rejectButton(v)),
+                SizedBox(width: 16),
+                Expanded(child: _approveButton(v)),
+              ]),
             ],
           ),
         ),
@@ -220,20 +205,20 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
   }
 
   Widget _infoRow(IconData icon, String text) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: EdgeInsets.symmetric(vertical: 8),
         child: Row(children: [
           Icon(icon, size: 22, color: Colors.grey[600]),
-          const SizedBox(width: 14),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 16.5))),
+          SizedBox(width: 14),
+          Expanded(child: Text(text, style: TextStyle(fontSize: 16.5))),
         ]),
       );
 
   Widget _infoRowBold(String label, String value) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: EdgeInsets.symmetric(vertical: 10),
         child: Row(children: [
-          SizedBox(width: 140, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16))),
-          const Text(': ', style: TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
+          SizedBox(width: 140, child: Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16))),
+          Text(': ', style: TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
         ]),
       );
 
@@ -252,29 +237,23 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: Offset(0, 4))],
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.12),
-          child: Icon(icon, color: color, size: 28),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(fileName, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        leading: CircleAvatar(backgroundColor: color.withValues(alpha: 0.12), child: Icon(icon, color: color, size: 28)),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        subtitle: Padding(padding: EdgeInsets.only(top: 4), child: Text(fileName, style: TextStyle(color: Colors.grey[600], fontSize: 13))),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(icon: const Icon(Icons.visibility, color: Colors.blue), onPressed: () => _smartOpen(url), tooltip: 'View'),
-            IconButton(icon: const Icon(Icons.download, color: Colors.green), onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication), tooltip: 'Download'),
+            IconButton(icon: Icon(Icons.visibility, color: Colors.blue), onPressed: () => _smartOpen(url), tooltip: 'View'),
+            IconButton(icon: Icon(Icons.download, color: Colors.green), onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication), tooltip: 'Download'),
           ],
         ),
       ),
@@ -295,32 +274,24 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
   Widget _rejectButton(Map v) => SizedBox(
         height: 56,
         child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red.shade600,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 8,
-          ),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 8),
           onPressed: () {
             Navigator.pop(context);
             _confirmAction('rejected', v);
           },
-          child: const Text('Reject', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
+          child: Text('Reject', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
         ),
       );
 
   Widget _approveButton(Map v) => SizedBox(
         height: 56,
         child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green.shade600,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 8,
-          ),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade600, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 8),
           onPressed: () {
             Navigator.pop(context);
             _confirmAction('approved', v);
           },
-          child: const Text('Approve', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
+          child: Text('Approve', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
         ),
       );
 
@@ -331,25 +302,23 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('${status == 'approved' ? 'Approve' : 'Reject'} Vehicle Registration?'),
-        content: Text.rich(
-          TextSpan(children: [
-            const TextSpan(text: 'Vehicle: ', style: TextStyle(fontWeight: FontWeight.bold)),
-            TextSpan(text: '${v['make']} ${v['model']} (${v['year']})\n'),
-            const TextSpan(text: 'Plate: ', style: TextStyle(fontWeight: FontWeight.bold)),
-            TextSpan(text: '${v['number_plate']}\n'),
-            const TextSpan(text: 'Owner: ', style: TextStyle(fontWeight: FontWeight.bold)),
-            TextSpan(text: v['owner_full_name']),
-          ]),
-        ),
+        content: Text.rich(TextSpan(children: [
+          TextSpan(text: 'Vehicle: ', style: TextStyle(fontWeight: FontWeight.bold)),
+          TextSpan(text: '${v['make']} ${v['model']} (${v['year']})\n'),
+          TextSpan(text: 'Plate: ', style: TextStyle(fontWeight: FontWeight.bold)),
+          TextSpan(text: '${v['number_plate']}\n'),
+          TextSpan(text: 'Owner: ', style: TextStyle(fontWeight: FontWeight.bold)),
+          TextSpan(text: v['owner_full_name']),
+        ])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(color: Color(0xFF1172D4)))),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel', style: TextStyle(color: Color(0xFF1172D4)))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: status == 'approved' ? Colors.green : Colors.red),
             onPressed: () {
               Navigator.pop(context);
               _updateStatus(v['id'], status);
             },
-            child: Text(status == 'approved' ? 'Approve' : 'Reject', style: const TextStyle(color: Colors.white)),
+            child: Text(status == 'approved' ? 'Approve' : 'Reject', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -359,64 +328,75 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: Color(0xFFF9FAFB),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87), onPressed: () => context.pop()),
-        title: const Text('Pending Vehicle Registrations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black87)),
+        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new, color: Colors.black87), onPressed: () => context.pop()),
+        title: Text('Pending Vehicle Registrations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black87)),
         centerTitle: true,
       ),
       body: loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1172D4)))
+          ? Center(child: CircularProgressIndicator(color: Color(0xFF1172D4)))
           : pendingVehicles.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.no_crash, size: 80, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('No pending registrations', style: TextStyle(fontSize: 18, color: Colors.grey)),
-                    ],
+              ? Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 40),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'No pending registrations',
+                          style: TextStyle(fontSize: 20, color: Colors.grey[700], fontWeight: FontWeight.w600),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'All vehicle registrations have been processed.',
+                          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : RefreshIndicator(
                   onRefresh: _loadPendingVehicles,
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16),
                     itemCount: pendingVehicles.length,
                     itemBuilder: (_, i) {
                       final v = pendingVehicles[i];
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
+                        margin: EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(24),
-                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 8))],
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: Offset(0, 8))],
                         ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(24),
                           onTap: () => _showVehicleDetails(v),
                           child: Padding(
-                            padding: const EdgeInsets.all(24),
+                            padding: EdgeInsets.all(24),
                             child: Row(children: [
                               Container(
                                 width: 80,
                                 height: 80,
-                                decoration: BoxDecoration(color: const Color(0xFFF0F7FF), borderRadius: BorderRadius.circular(20)),
-                                child: const Icon(Icons.directions_car, size: 44, color: Color(0xFF1172D4)),
+                                decoration: BoxDecoration(color: Color(0xFFF0F7FF), borderRadius: BorderRadius.circular(20)),
+                                child: Icon(Icons.directions_car, size: 44, color: Color(0xFF1172D4)),
                               ),
-                              const SizedBox(width: 20),
+                              SizedBox(width: 20),
                               Expanded(
                                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text('${v['make']} ${v['model']}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                  Text('${v['make']} ${v['model']}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                                   Text('Year: ${v['year']}', style: TextStyle(color: Colors.grey[700], fontSize: 15.5)),
-                                  const SizedBox(height: 6),
-                                  Text(v['number_plate'] ?? '', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1172D4))),
-                                  const SizedBox(height: 8),
-                                  Text(v['owner_full_name'] ?? '', style: const TextStyle(fontSize: 15)),
-                                  const SizedBox(height: 12),
-                                  const Text('Tap to review documents', style: TextStyle(color: Color(0xFF1172D4), fontSize: 15, fontWeight: FontWeight.w600)),
+                                  SizedBox(height: 6),
+                                  Text(v['number_plate'] ?? '', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1172D4))),
+                                  SizedBox(height: 8),
+                                  Text(v['owner_full_name'] ?? '', style: TextStyle(fontSize: 15)),
+                                  SizedBox(height: 12),
+                                  Text('Tap to review documents →', style: TextStyle(color: Color(0xFF1172D4), fontSize: 15, fontWeight: FontWeight.w600)),
                                 ]),
                               ),
                               Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
@@ -431,29 +411,28 @@ class _VehicleRegistrationListScreenState extends State<VehicleRegistrationListS
   }
 }
 
+// Reusable const widgets
 class _DragHandle extends StatelessWidget {
   const _DragHandle();
   @override
-  Widget build(BuildContext context) {
-    return Center(child: Container(width: 60, height: 6, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))));
-  }
+  Widget build(BuildContext context) => Center(
+        child: Container(width: 60, height: 6, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
+      );
 }
 
 class _EmptyDocumentsState extends StatelessWidget {
   const _EmptyDocumentsState();
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(children: [
-          Icon(Icons.description_outlined, size: 64, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text('No documents uploaded', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
-        ]),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Column(children: [
+            Icon(Icons.folder_open, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('No documents uploaded', style: TextStyle(color: Colors.grey, fontSize: 16)),
+          ]),
+        ),
+      );
 }
 
 extension StringExt on String {

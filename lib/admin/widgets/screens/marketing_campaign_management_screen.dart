@@ -107,7 +107,7 @@ class _MarketingCampaignManagementScreenState
                 const SizedBox(height: 20),
                 Text(
                   isEdit ? 'Edit Campaign' : 'New Campaign',
-                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -143,9 +143,23 @@ class _MarketingCampaignManagementScreenState
 
                 TextField(
                   controller: titleController,
+                  style: const TextStyle(color: Colors.black),
+                  cursorColor: Colors.black,
                   decoration: InputDecoration(
                     labelText: 'Campaign Title',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    labelStyle: const TextStyle(color: Colors.black54),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.black),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.black54),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.black, width: 2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -153,19 +167,45 @@ class _MarketingCampaignManagementScreenState
                 TextField(
                   controller: contentController,
                   maxLines: 4,
+                  style: const TextStyle(color: Colors.black),
+                  cursorColor: Colors.black,
                   decoration: InputDecoration(
                     labelText: 'Campaign Message',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    labelStyle: const TextStyle(color: Colors.black54),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.black),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.black54),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.black, width: 2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
 
                 DropdownButtonFormField<LoyaltySegment>(
                   initialValue: selectedSegment,
+                  style: const TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     labelText: 'Target Audience',
-                    labelStyle: const TextStyle(color: Colors.black),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    labelStyle: const TextStyle(color: Colors.black54),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.black),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.black54),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.black, width: 2),
+                    ),
                     filled: true,
                     fillColor: Colors.white,
                   ),
@@ -173,7 +213,7 @@ class _MarketingCampaignManagementScreenState
                   items: LoyaltySegment.values
                       .map((seg) => DropdownMenuItem(
                             value: seg,
-                            child: Text(seg.displayName),
+                            child: Text(seg.displayName, style: const TextStyle(color: Colors.black)),
                           ))
                       .toList(),
                   onChanged: (v) {
@@ -197,7 +237,7 @@ class _MarketingCampaignManagementScreenState
                         return Theme(
                           data: ThemeData.light().copyWith(
                             colorScheme: const ColorScheme.light(
-                              primary: Color(0xFF1172D4),
+                              primary: Colors.black,
                               onPrimary: Colors.white,
                               surface: Colors.white,
                               onSurface: Colors.black87,
@@ -228,7 +268,7 @@ class _MarketingCampaignManagementScreenState
                         return Theme(
                           data: ThemeData.light().copyWith(
                             colorScheme: const ColorScheme.light(
-                              primary: Color(0xFF1172D4),
+                              primary: Colors.black,
                               onPrimary: Colors.white,
                               surface: Colors.white,
                               onSurface: Colors.black87,
@@ -247,9 +287,9 @@ class _MarketingCampaignManagementScreenState
                 const SizedBox(height: 16),
 
                 SwitchListTile(
-                  title: const Text('Campaign Active'),
+                  title: const Text('Campaign Active', style: TextStyle(color: Colors.black)),
                   value: isActive,
-                  activeThumbColor: const Color(0xFF1172D4),
+                  activeColor: Colors.black,
                   onChanged: (v) => setStateSheet(() => isActive = v),
                 ),
                 const SizedBox(height: 32),
@@ -344,12 +384,12 @@ class _MarketingCampaignManagementScreenState
                         context: dialogContext,
                         builder: (ctx) => AlertDialog(
                           backgroundColor: Colors.white,
-                          title: const Text('Delete Campaign?'),
-                          content: const Text('This action cannot be undone.'),
+                          title: const Text('Delete Campaign?', style: TextStyle(color: Colors.black)),
+                          content: const Text('This action cannot be undone.', style: TextStyle(color: Colors.black)),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, false),
-                              child: const Text('Cancel', style: TextStyle(color: Color(0xFF1172D4))),
+                              child: const Text('Cancel', style: TextStyle(color: Colors.black)),
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, true),
@@ -432,7 +472,7 @@ class _MarketingCampaignManagementScreenState
                                 ),
                           title: Text(
                             c['title'],
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,7 +481,7 @@ class _MarketingCampaignManagementScreenState
                                 c['content'],
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 14),
+                                style: const TextStyle(fontSize: 14, color: Colors.black87),
                               ),
                               const SizedBox(height: 10),
                               Column(
@@ -454,7 +494,7 @@ class _MarketingCampaignManagementScreenState
                                       Expanded(
                                         child: Text(
                                           _segmentDisplay(segment),
-                                          style: const TextStyle(fontSize: 13),
+                                          style: const TextStyle(fontSize: 13, color: Colors.black87),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -468,7 +508,7 @@ class _MarketingCampaignManagementScreenState
                                       Expanded(
                                         child: Text(
                                           dateRange,
-                                          style: const TextStyle(fontSize: 13),
+                                          style: const TextStyle(fontSize: 13, color: Colors.black87),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -560,8 +600,11 @@ class _DateTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-        leading: const Icon(Icons.calendar_today, color: Color(0xFF1172D4)),
-        title: Text('$label: ${DateFormat('dd MMM yyyy').format(date)}'),
+        leading: const Icon(Icons.calendar_today, color: Colors.black),
+        title: Text(
+          '$label: ${DateFormat('dd MMM yyyy').format(date)}',
+          style: const TextStyle(color: Colors.black),
+        ),
         onTap: onTap,
       );
 }

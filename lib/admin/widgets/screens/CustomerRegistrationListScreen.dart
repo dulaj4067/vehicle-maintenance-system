@@ -1,3 +1,5 @@
+// lib/admin/screens/customer_registration_list_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -76,7 +78,6 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
 
   // SMART OPEN WITH BUCKET NAME FIX
   Future<void> _smartOpen(String url) async {
-    // FIX OLD BUCKET NAMES IN URL
     String fixedUrl = url
         .replaceAll('customer-documents', 'customer_documents')
         .replaceAll('vehicle-documents', 'vehicle_documents');
@@ -168,7 +169,6 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
                   final String url = doc['s3_link'] ?? '';
                   if (url.isEmpty) return const SizedBox();
 
-                  // FINAL FIX FOR BUCKET NAME
                   final String fixedUrl = url
                       .replaceAll('customer-documents', 'customer_documents')
                       .replaceAll('vehicle-documents', 'vehicle_documents');
@@ -289,7 +289,27 @@ class _CustomerRegistrationListScreenState extends State<CustomerRegistrationLis
       body: loading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF1172D4)))
           : pendingUsers.isEmpty
-              ? const Center(child: Text('No pending registrations', style: TextStyle(fontSize: 18, color: Colors.grey)))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'No pending registrations',
+                          style: TextStyle(fontSize: 20, color: Colors.grey[700], fontWeight: FontWeight.w600),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'All customer registrations have been processed.',
+                          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: pendingUsers.length,
