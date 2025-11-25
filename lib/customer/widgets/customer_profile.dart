@@ -404,22 +404,29 @@ class _CustomerProfileState extends State<CustomerProfile> {
 
                     const SizedBox(height: 32),
                     _buildSectionHeader('Membership & Activity', textColor),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     
-                    GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 14,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      childAspectRatio: 1,
-                      children: [
-                        _buildStatCard('Loyalty Points', _loyaltyPoints.toString(), Icons.loyalty, textColor),
-                        _buildStatCard('Membership Tier', _loyaltyLevel, Icons.star_border, textColor),
-                        _buildStatCard('Vehicles Registered', _vehicleCount.toString(), Icons.directions_car_outlined, textColor),
-                        _buildStatCard('Total Service Requests', _serviceRequestCount.toString(), Icons.build_outlined, textColor),
-                      ],
-                    ),
+                    Column(
+    children: [
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: _buildFlexibleCard('Loyalty Points', _loyaltyPoints.toString(), Icons.loyalty, textColor)),
+          const SizedBox(width: 16),
+          Expanded(child: _buildFlexibleCard('Membership', _loyaltyLevel, Icons.star_border, textColor)),
+        ],
+      ),
+      const SizedBox(height: 14),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: _buildFlexibleCard('Vehicles Registered', _vehicleCount.toString(), Icons.directions_car_outlined, textColor)),
+          const SizedBox(width: 16),
+          Expanded(child: _buildFlexibleCard('Total Service Requests', _serviceRequestCount.toString(), Icons.build_outlined, textColor)),
+        ],
+      ),
+    ],
+  ),
 
                     const SizedBox(height: 32),
                   ],
@@ -486,47 +493,47 @@ class _CustomerProfileState extends State<CustomerProfile> {
       ),
     );
   }
+Widget _buildFlexibleCard(String title, String value, IconData icon, Color textColor) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: textColor.withAlpha(0x14),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: textColor.withAlpha(0x26), width: 1.5),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: textColor.withAlpha(0x26),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: textColor, size: 20),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          value,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          title,
+          style: TextStyle(
+            color: textColor.withAlpha(0xB3),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            height: 1.2, 
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color textColor) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16), 
-      decoration: BoxDecoration(
-        color: textColor.withAlpha(0x14),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: textColor.withAlpha(0x26), width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: textColor.withAlpha(0x26),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: textColor, size: 20),
-          ),
-          const SizedBox(height: 10), 
-          Text(
-            value,
-            style: TextStyle(
-              color: textColor,
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              color: textColor.withAlpha(0xB3),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

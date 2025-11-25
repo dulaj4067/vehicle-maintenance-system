@@ -549,7 +549,7 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
               ),
             ),
             body: isLoading && vehicles.isEmpty 
-                ? const Center(child: CircularProgressIndicator())
+                ?  Center(child: CircularProgressIndicator(color: safeColor))
                 : TabBarView(
                     controller: _tabController,
                     children: [
@@ -880,7 +880,7 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
             const SizedBox(height: 24),
             
             if (isLoading)
-              Center(child: CircularProgressIndicator(color: themeColor == Colors.white ? Colors.blue : themeColor))
+              Center(child: CircularProgressIndicator(color: safeColor))
             else if (selectedType != null && availableSlots.isEmpty)
                Center(
                 child: Padding(
