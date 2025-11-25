@@ -237,13 +237,16 @@ class _MarketingCampaignManagementScreenState
                         return Theme(
                           data: ThemeData.light().copyWith(
                             colorScheme: const ColorScheme.light(
-                              primary: Colors.black,
+                              primary: Color(0xFF1172D4),
                               onPrimary: Colors.white,
                               surface: Colors.white,
                               onSurface: Colors.black87,
                             ),
                             dialogTheme: const DialogThemeData(
                               backgroundColor: Colors.white,
+                            ),
+                            textButtonTheme: TextButtonThemeData(
+                              style: TextButton.styleFrom(foregroundColor: const Color(0xFF1172D4)),
                             ),
                           ),
                           child: child!,
@@ -268,13 +271,16 @@ class _MarketingCampaignManagementScreenState
                         return Theme(
                           data: ThemeData.light().copyWith(
                             colorScheme: const ColorScheme.light(
-                              primary: Colors.black,
+                              primary: Color(0xFF1172D4),
                               onPrimary: Colors.white,
                               surface: Colors.white,
                               onSurface: Colors.black87,
                             ),
                             dialogTheme: const DialogThemeData(
                               backgroundColor: Colors.white,
+                            ),
+                            textButtonTheme: TextButtonThemeData(
+                              style: TextButton.styleFrom(foregroundColor: const Color(0xFF1172D4)),
                             ),
                           ),
                           child: child!,
@@ -289,7 +295,8 @@ class _MarketingCampaignManagementScreenState
                 SwitchListTile(
                   title: const Text('Campaign Active', style: TextStyle(color: Colors.black)),
                   value: isActive,
-                  activeThumbColor: Colors.black,
+                  activeTrackColor: const Color(0xFF1172D4),
+                  activeThumbColor: Colors.white,
                   onChanged: (v) => setStateSheet(() => isActive = v),
                 ),
                 const SizedBox(height: 32),
@@ -389,7 +396,7 @@ class _MarketingCampaignManagementScreenState
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, false),
-                              child: const Text('Cancel', style: TextStyle(color: Colors.black)),
+                              child: const Text('Cancel', style: TextStyle(color: Color(0xFF1172D4))),
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, true),
@@ -600,10 +607,10 @@ class _DateTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-        leading: const Icon(Icons.calendar_today, color: Colors.black),
+        leading: const Icon(Icons.calendar_today, color: Color(0xFF1172D4)),
         title: Text(
           '$label: ${DateFormat('dd MMM yyyy').format(date)}',
-          style: const TextStyle(color: Colors.black),
+          style: const TextStyle(color: Color(0xFF1172D4)),
         ),
         onTap: onTap,
       );
