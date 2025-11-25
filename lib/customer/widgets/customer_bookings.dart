@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
-import '../../theme_color.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class Vehicle {
@@ -147,10 +146,10 @@ class ServiceRequest {
 
   Color get statusColor {
     switch (status.toLowerCase()) {
-      case 'confirmed': return Colors.green;
-      case 'completed': return Colors.blue;
-      case 'cancelled': return Colors.red;
-      case 'pending': return Colors.orange;
+      case 'confirmed': return Colors.green.shade600;
+      case 'completed': return Colors.blue.shade600;
+      case 'cancelled': return Colors.red.shade600;
+      case 'pending': return Colors.orange.shade600;
       default: return Colors.grey;
     }
   }
@@ -167,6 +166,12 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
   late TabController _tabController;
   final SupabaseClient supabase = Supabase.instance.client;
   
+  // Custom Colors
+  final Color _scaffoldBgColor = const Color(0xFF060606);
+  final Color _primaryTextColor = const Color(0xFFF5F0EB);
+  final Color _accentColor = const Color(0xFFC0A068);
+  final Color _cardBgColor = const Color(0xFF101010); 
+
   List<ServiceRequest> upcoming = [];
   List<ServiceRequest> history = [];
   List<Vehicle> vehicles = [];
@@ -206,13 +211,13 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
   void _showError(String message) {
     if (!mounted) return;
     Fluttertoast.showToast(
-  msg: message,
-  toastLength: Toast.LENGTH_LONG,
-  gravity: ToastGravity.TOP,
-  backgroundColor: ThemeColorManager.getSafeColor(),
-  textColor: ThemeColorManager.getColor(),  
-  fontSize: 16.0,
-);
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.TOP,
+      backgroundColor: _primaryTextColor,
+      textColor: _scaffoldBgColor,  
+      fontSize: 16.0,
+    );
   }
 
   void _showSuccess(String message) {
@@ -221,8 +226,8 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
       msg: message,
       toastLength: Toast.LENGTH_LONG,
       gravity: ToastGravity.TOP,
-      backgroundColor: ThemeColorManager.getSafeColor(),
-      textColor: ThemeColorManager.getColor(),
+      backgroundColor: _accentColor,
+      textColor: _scaffoldBgColor,
       fontSize: 16.0,
     );
   }
@@ -465,139 +470,115 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-      valueListenable: ThemeColorManager.refresh,
-      builder: (context, _, __) {
-        final themeColor = ThemeColorManager.getColor();
-        final safeColor = ThemeColorManager.getSafeColor();
-
-        return Theme(
-          data: Theme.of(context).copyWith(
-            primaryColor: themeColor,
-            scaffoldBackgroundColor: themeColor,
-            
-            appBarTheme: AppBarTheme(
-              backgroundColor: themeColor,
-              foregroundColor: safeColor,
-              iconTheme: IconThemeData(color: safeColor),
-            ),
-            colorScheme: ColorScheme.fromSeed(seedColor: themeColor),
-            inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-              fillColor: themeColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
-              ),
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: _scaffoldBgColor,
+        surfaceTintColor: _scaffoldBgColor,
+        elevation: 0,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+        ),
+        toolbarHeight: 80.0,
+        title: Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Text(
+            'My Bookings',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: _primaryTextColor,
             ),
           ),
-          child: Scaffold(
-            appBar: AppBar(
-              backgroundColor: ThemeColorManager.getColor(),
-              surfaceTintColor: ThemeColorManager.getColor(),
-              elevation: 0,
-              systemOverlayStyle: const SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
-                statusBarIconBrightness: Brightness.dark,
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(50),
+          child: Column(
+            children: [
+              TabBar(
+              controller: _tabController,
+              splashFactory: NoSplash.splashFactory,
+              overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+              indicatorColor: _accentColor,
+              indicatorWeight: 2,
+              labelColor: _accentColor,
+              unselectedLabelColor: _primaryTextColor.withAlpha(127),
+              labelStyle: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
               ),
-              toolbarHeight: 80.0,
-              title: Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  'My Bookings',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: safeColor,
-                  ),
-                ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
               ),
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(50),
-                child: Column(
-                  children: [
-                    TabBar(
-                    controller: _tabController,
-                    splashFactory: NoSplash.splashFactory,
-                    overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-                    indicatorColor: safeColor,
-                    indicatorWeight: 2,
-                    labelColor: safeColor,
-                    unselectedLabelColor: safeColor.withAlpha(0x66),
-                    labelStyle: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    unselectedLabelStyle: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    indicatorPadding: const EdgeInsets.symmetric(horizontal: 5),
-                    tabs: const [
-                      Tab(text: 'Upcoming'),
-                      Tab(text: 'History'),
-                      Tab(text: 'Booking'),
-                    ],
-                  ),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
-                      color: safeColor,
-                      height: 0.5,
-                    ),
-                  ],
-                ),
-              ),
+              indicatorPadding: const EdgeInsets.symmetric(horizontal: 5),
+              tabs: const [
+                Tab(text: 'Upcoming'),
+                Tab(text: 'History'),
+                Tab(text: 'Booking'),
+              ],
             ),
-            body: isLoading && vehicles.isEmpty 
-                ?  Center(child: CircularProgressIndicator(color: safeColor))
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildUpcomingTab(themeColor, safeColor),
-                      _buildHistoryTab(themeColor, safeColor),
-                      _buildBookingTab(themeColor, safeColor),
-                    ],
-                  ),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 10),
+                color: _accentColor,
+                height: 0.5,
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
+      backgroundColor: _scaffoldBgColor,
+      body: isLoading && vehicles.isEmpty 
+          ?  Center(child: CircularProgressIndicator(color: _accentColor))
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildUpcomingTab(),
+                _buildHistoryTab(),
+                _buildBookingTab(),
+              ],
+            ),
     );
   }
 
-  Widget _buildUpcomingTab(Color themeColor, Color safeColor) {
+  Widget _buildUpcomingTab() {
     if (upcoming.isEmpty) {
     return RefreshIndicator(
       onRefresh: () async => _loadInitialData(),
+      color: _accentColor,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 300),
-          Center(child: Text('No upcoming bookings')),
+        children: [
+          const SizedBox(height: 300),
+          Center(child: Text('No upcoming bookings', style: TextStyle(color: _primaryTextColor))),
         ],
       ),
     );
   }
     return RefreshIndicator(
       onRefresh: () async => _loadInitialData(),
+      color: _accentColor,
       child: ListView.builder(
         padding: const EdgeInsets.all(8),
         itemCount: upcoming.length,
         itemBuilder: (context, index) {
           final request = upcoming[index];
           
-        return Container(
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Container(
           decoration: BoxDecoration(
-            border: Border.all(color: safeColor.withAlpha(0x80), width: 1.2),
+            border: Border.all(color: _accentColor.withAlpha(127), width: 1.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Card(
-            color: themeColor,
+            color: _cardBgColor,
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -607,7 +588,7 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
                       Expanded(
                         child: Text(
                           '${request.vehicle?.make ?? 'Vehicle'} ${request.vehicle?.model ?? ''}',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: safeColor),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _primaryTextColor),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -626,13 +607,13 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Text('Type: ${request.type.toUpperCase()}', style: TextStyle(color: safeColor, fontWeight: FontWeight.w500)),
+                  Text('Type: ${request.type.toUpperCase()}', style: TextStyle(color: _primaryTextColor, fontWeight: FontWeight.w500)),
                   if (request.slot != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         'Date: ${DateFormat('yyyy-MM-dd').format(request.slot!.date)} at ${request.slot!.displayTime}',
-                        style: TextStyle(color: safeColor.withAlpha(0xCC)),
+                        style: TextStyle(color: _primaryTextColor.withAlpha(200)),
                       ),
                     ),
                   if (request.description != null && request.description!.isNotEmpty)
@@ -640,7 +621,7 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
                         'Note: ${request.description}',
-                        style: TextStyle(fontStyle: FontStyle.italic, color: safeColor.withAlpha(0xCC)),
+                        style: TextStyle(fontStyle: FontStyle.italic, color: _primaryTextColor.withAlpha(200)),
                       ),
                     ),
                   if (request.suggestedSlotId != null && request.suggestedSlot != null)
@@ -655,11 +636,14 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Admin suggested new time:', style: TextStyle(color: Colors.amber[900], fontWeight: FontWeight.bold)),
-                          Text('${DateFormat('yyyy-MM-dd').format(request.suggestedSlot!.date)} at ${request.suggestedSlot!.displayTime}'),
+                          Text('Admin suggested new time:', style: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.bold)),
+                          Text(
+                            '${DateFormat('yyyy-MM-dd').format(request.suggestedSlot!.date)} at ${request.suggestedSlot!.displayTime}',
+                            style: TextStyle(color: _primaryTextColor)
+                          ),
                           TextButton(
                             onPressed: () => _acceptSuggested(request.id, request.suggestedSlotId!),
-                            child: const Text('Accept New Time'),
+                            child: Text('Accept New Time', style: TextStyle(color: _accentColor)),
                           ),
                         ],
                       ),
@@ -668,8 +652,8 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       // TextButton.icon(
-                      //   icon: Icon(Icons.edit, size: 16, color: safeColor),
-                      //   label: Text('Amend', style: TextStyle(color: safeColor)),
+                      //   icon: Icon(Icons.edit, size: 16, color: _accentColor),
+                      //   label: Text('Amend', style: TextStyle(color: _accentColor)),
                       //   onPressed: () => _amendRequest(request),
                       // ),
                       const SizedBox(width: 8),
@@ -684,39 +668,42 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
               ),
             ),
           ),
+         ),
         );
         },
       ),
     );
   }
 
-  Widget _buildHistoryTab(Color themeColor, Color safeColor) {
+  Widget _buildHistoryTab() {
     if (history.isEmpty) {
       return RefreshIndicator(
         onRefresh: () async => _loadInitialData(),
+        color: _accentColor,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(8),
           children:  [
-            SizedBox(height: 300), 
-            Center(child: Text('No booking history',style: TextStyle(color: ThemeColorManager.getSafeColor()))),
+            const SizedBox(height: 300), 
+            Center(child: Text('No booking history',style: TextStyle(color: _primaryTextColor))),
           ],
         ),
       );
     }
     return RefreshIndicator(
       onRefresh: () async => _loadInitialData(),
+      color: _accentColor,
       child: ListView.builder(
         padding: const EdgeInsets.all(8),
         itemCount: history.length,
         itemBuilder: (context, index) {
           final request = history[index];
           return Card(
-            color: themeColor,
+            color: _cardBgColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
               side: BorderSide(
-                color: safeColor,
+                color: _accentColor.withAlpha(127),
                 width: 1,
               ),
             ),
@@ -724,27 +711,27 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
             child: ListTile(
               title: Text(
                 '${request.vehicle?.make ?? ''} ${request.vehicle?.model ?? ''}',
-                style: TextStyle(color: safeColor),
+                style: TextStyle(color: _primaryTextColor, fontWeight: FontWeight.bold),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '${request.type.toUpperCase()} - ${DateFormat('MMM d, y').format(request.createdAt)}',
-                    style: TextStyle(color: safeColor.withValues()),
+                    style: TextStyle(color: _primaryTextColor.withAlpha(127)),
                   ),
                   if (request.slot != null) 
-                    Text('Slot: ${request.slot!.displayTime}', style: TextStyle(color: safeColor.withValues())),
+                    Text('Slot: ${request.slot!.displayTime}', style: TextStyle(color: _primaryTextColor.withAlpha(127))),
                 ],
               ),
               trailing: Chip(
-                label: Text(request.status, style:  TextStyle(color: Colors.white, fontSize: 14)),
+                label: Text(request.status, style: const TextStyle(color: Colors.white, fontSize: 14)),
                 backgroundColor: request.statusColor,
                 padding: EdgeInsets.zero,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                   side:  BorderSide(
-                    color: themeColor,
+                    color: _cardBgColor,
                     width: 1,
                   ),
                 ),
@@ -756,7 +743,34 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
     );
   }
 
-  Widget _buildBookingTab(Color themeColor, Color safeColor) {
+  Widget _buildBookingTab() {
+    const double borderRadius = 8.0;
+    
+    // Create custom InputDecoration for all form fields
+    InputDecoration themedInputDecoration({String? labelText, String? hintText, Widget? suffixIcon}) {
+      return InputDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        labelStyle: TextStyle(color: _primaryTextColor.withAlpha(127)),
+        hintStyle: TextStyle(color: _primaryTextColor.withAlpha(127)),
+        fillColor: _cardBgColor,
+        filled: true,
+        suffixIcon: suffixIcon != null ? IconTheme(data: IconThemeData(color: _accentColor), child: suffixIcon) : null,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+          borderSide: BorderSide(color: _primaryTextColor.withAlpha(50), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+          borderSide: BorderSide(color: _accentColor, width: 1.5),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -768,21 +782,26 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
                 padding: const EdgeInsets.all(8),
                 margin: const EdgeInsets.only(bottom: 16),
                 width: double.infinity,
-                color: Colors.amber.withAlpha(0x1A),
-                child:  Text('Editing Booking', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold,color: safeColor)),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withAlpha(50),
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  border: Border.all(color: Colors.amber, width: 0.5),
+                ),
+                child:  Text(
+                  'Editing Booking', 
+                  textAlign: TextAlign.center, 
+                  style: TextStyle(fontWeight: FontWeight.bold, color: _primaryTextColor.withAlpha(200))
+                ),
               ),
 
-             Text('Vehicle Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: safeColor)),
+             Text('Vehicle Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: _primaryTextColor)),
             const SizedBox(height: 8),
             if (vehicles.isNotEmpty)
               DropdownButtonFormField<Vehicle>(
-                dropdownColor:themeColor,
+                dropdownColor: _cardBgColor,
                 initialValue: selectedVehicle,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  enabledBorder: OutlineInputBorder(),
-                  focusedBorder: OutlineInputBorder(),
-                ),
+                decoration: themedInputDecoration(),
+                style: TextStyle(color: _primaryTextColor, fontSize: 16),
                 isExpanded: true,
                 onChanged: (vehicle) {
                   setState(() {
@@ -791,29 +810,24 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
                 },
                 items: vehicles.map((v) => DropdownMenuItem(
                   value: v,
-                  child: Text('${v.make} ${v.model} - ${v.numberPlate}',style: TextStyle(color: safeColor)),
+                  child: Text('${v.make} ${v.model} - ${v.numberPlate}',style: TextStyle(color: _primaryTextColor)),
                 )).toList(),
               )
             else
-               Text('No vehicles found. Please add a vehicle in your profile.',style: TextStyle(color: ThemeColorManager.getSafeColor())),
+               Text('No vehicles found. Please add a vehicle in your profile.',style: TextStyle(color: _primaryTextColor.withAlpha(127))),
               
             const SizedBox(height: 24),
-             Text('Service Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: safeColor)),
+             Text('Service Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: _primaryTextColor)),
             const SizedBox(height: 8),
             
             DropdownButtonFormField<String>(
-              dropdownColor:themeColor,
+              dropdownColor: _cardBgColor,
               initialValue: selectedType,
-              decoration:  InputDecoration(
-                labelText: 'Service Type',
-                labelStyle: TextStyle(color: safeColor),
-                border: OutlineInputBorder(),
-                enabledBorder: OutlineInputBorder(),
-                focusedBorder: OutlineInputBorder(),
-              ),
+              decoration: themedInputDecoration(labelText: 'Service Type'),
+              style: TextStyle(color: _primaryTextColor, fontSize: 16),
               items: ['service', 'maintenance'].map((t) => DropdownMenuItem(
                 value: t,
-                child: Text(t.toUpperCase(),style: TextStyle(color: ThemeColorManager.getSafeColor())),
+                child: Text(t.toUpperCase(),style: TextStyle(color: _primaryTextColor)),
               )).toList(),
               onChanged: (type) {
                 setState(() {
@@ -840,11 +854,11 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
                     return Theme(
                       data: Theme.of(context).copyWith(
                         colorScheme: ColorScheme.light(
-                          primary: safeColor,
-                          onPrimary: themeColor,
-                          surface: themeColor,
-                          onSurface: safeColor,
-                        ),
+                          primary: _accentColor,
+                          onPrimary: _scaffoldBgColor,
+                          surface: _cardBgColor,
+                          onSurface: _primaryTextColor,
+                        ), dialogTheme: DialogThemeData(backgroundColor: _cardBgColor),
                       ),
                       child: child!,
                     );
@@ -862,17 +876,13 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
                 }
               },
               child: InputDecorator(
-                decoration:  InputDecoration(
-                  border: OutlineInputBorder(),
-                  enabledBorder: OutlineInputBorder(),
-                  focusedBorder: OutlineInputBorder(),
+                decoration: themedInputDecoration(
                   labelText: 'Date',
-                  labelStyle: TextStyle(color: safeColor),
-                  suffixIcon: Icon(Icons.calendar_today),
+                  suffixIcon: const Icon(Icons.calendar_today),
                 ),
                 child: Text(
                   DateFormat('EEEE, MMMM d, y').format(selectedDate),
-                  style:  TextStyle(fontSize: 16,color: safeColor),
+                  style:  TextStyle(fontSize: 16,color: _primaryTextColor),
                 ),
               ),
             ),
@@ -880,18 +890,18 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
             const SizedBox(height: 24),
             
             if (isLoading)
-              Center(child: CircularProgressIndicator(color: safeColor))
+              Center(child: CircularProgressIndicator(color: _accentColor))
             else if (selectedType != null && availableSlots.isEmpty)
                Center(
                 child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text('No available slots for this date/type.', style: TextStyle(color: safeColor)),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text('No available slots for this date/type.', style: TextStyle(color: _primaryTextColor.withAlpha(127))),
                 ),
               )
             else if (selectedType != null) ...[
               Text(
                 'Available Time Slots (${availableSlots.length})', 
-                style:  TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: safeColor)
+                style:  TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: _primaryTextColor)
               ),
               const SizedBox(height: 8),
               Wrap(
@@ -905,11 +915,14 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
                     onSelected: (selected) {
                       setState(() => selectedSlot = selected ? slot : null);
                     },
-                    backgroundColor: themeColor,
-                    selectedColor: themeColor,
+                    backgroundColor: _cardBgColor,
+                    selectedColor: _accentColor.withAlpha(127),
                     labelStyle: TextStyle(
-                      color: isSelected ? safeColor : safeColor,
+                      color: isSelected ? _scaffoldBgColor : _primaryTextColor,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    side: BorderSide(
+                      color: isSelected ? _accentColor : _primaryTextColor.withAlpha(80),
                     ),
                   );
                 }).toList(),
@@ -918,15 +931,12 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
 
             if (selectedType == 'maintenance') ...[
               const SizedBox(height: 24),
-               Text('Issue Description', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: safeColor)),
+               Text('Issue Description', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: _primaryTextColor)),
               const SizedBox(height: 8),
               TextField(
                 controller: _descriptionController,
-                decoration:  InputDecoration(
-                  labelStyle: TextStyle(color: safeColor),
-                  border: OutlineInputBorder(),
-                  enabledBorder: OutlineInputBorder(),
-                  focusedBorder: OutlineInputBorder(),
+                style: TextStyle(color: _primaryTextColor),
+                decoration: themedInputDecoration(
                   hintText: 'Please describe the issue with your vehicle...',
                 ),
                 maxLines: 4,
@@ -943,11 +953,15 @@ class _CustomerBookingsState extends State<CustomerBookings> with SingleTickerPr
                     ? null
                     : _submitRequest,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: safeColor,
-                  foregroundColor: safeColor,
+                  backgroundColor: _accentColor,
+                  foregroundColor: _scaffoldBgColor,
                   elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius))
                 ),
-                child: Text(_editingRequestId != null ? 'UPDATE BOOKING' : 'CONFIRM BOOKING',style: TextStyle(color: ThemeColorManager.getColor())),
+                child: Text(
+                  _editingRequestId != null ? 'UPDATE BOOKING' : 'CONFIRM BOOKING',
+                  style: TextStyle(color: _scaffoldBgColor, fontWeight: FontWeight.bold)
+                ),
               ),
             ),
             const SizedBox(height: 32),

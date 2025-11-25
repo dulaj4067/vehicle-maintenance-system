@@ -37,6 +37,10 @@ class _RegisterPageState extends State<RegisterPage> {
   String? _generalError;
   PlatformFile? _pickedFile;
 
+  final Color _scaffoldBgColor = const Color(0xFF060606);
+  final Color _primaryTextColor = const Color(0xFFF5F0EB);
+  final Color _accentColor = const Color(0xFFC0A068);
+
   static const String _cacheRoleKey = 'user_role';
   static const String _cacheStatusKey = 'user_status';
   static const String _cacheLastCheckKey = 'user_last_check';
@@ -48,21 +52,21 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _saveOneSignalId(String userId) async {
-  try {
-    OneSignal.login(userId);
+    try {
+      OneSignal.login(userId);
 
-    final id = OneSignal.User.pushSubscription.id;
+      final id = OneSignal.User.pushSubscription.id;
 
-    if (id != null) {
-      await supabase
-          .from('profiles')
-          .update({'notification_id': id})
-          .eq('id', userId);
+      if (id != null) {
+        await supabase
+            .from('profiles')
+            .update({'notification_id': id})
+            .eq('id', userId);
+      }
+    } catch (e) {
+      print('Error saving notification ID: $e');
     }
-  } catch (e) {
-    print('Error saving notification ID: $e');
   }
-}
 
   Future<void> _checkAndRequestPermission() async {
     if (Platform.isAndroid) {
@@ -197,17 +201,19 @@ class _RegisterPageState extends State<RegisterPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Storage Permission Required'),
-          content: const Text(
+          backgroundColor: _scaffoldBgColor,
+          title: Text('Storage Permission Required', style: TextStyle(color: _primaryTextColor)),
+          content: Text(
             'This app needs access to your storage to upload documents and images. Please enable it in Settings.',
+            style: TextStyle(color: _primaryTextColor),
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel'),
+              child: Text('Cancel', style: TextStyle(color: _accentColor)),
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: const Text('Open Settings'),
+              child: Text('Open Settings', style: TextStyle(color: _accentColor)),
               onPressed: () {
                 Navigator.of(context).pop();
                 openAppSettings();
@@ -224,13 +230,13 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!hasPermission) {
       if (!mounted) return;
       Fluttertoast.showToast(
-      msg: 'Storage permission is required to pick files.',
-      toastLength: Toast.LENGTH_LONG,
-      gravity: ToastGravity.TOP,
-      backgroundColor: Colors.black,
-      textColor: Colors.white,
-      fontSize: 16.0,
-    );
+        msg: 'Storage permission is required to pick files.',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.TOP,
+        backgroundColor: Colors.red,
+        textColor: _primaryTextColor,
+        fontSize: 16.0,
+      );
       return;
     }
 
@@ -248,25 +254,25 @@ class _RegisterPageState extends State<RegisterPage> {
       } else {
         if (mounted) {
           Fluttertoast.showToast(
-          msg: 'No file selected',
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.TOP,
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
+            msg: 'No file selected',
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.TOP,
+            backgroundColor: _accentColor,
+            textColor: _scaffoldBgColor,
+            fontSize: 16.0,
+          );
         }
       }
     } catch (e) {
       if (mounted) {
         Fluttertoast.showToast(
-        msg: 'File picker error: $e',
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.TOP,
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+          msg: 'File picker error: $e',
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: _primaryTextColor,
+          fontSize: 16.0,
+        );
       }
     }
   }
@@ -277,14 +283,15 @@ class _RegisterPageState extends State<RegisterPage> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor:Colors.white,
-          title: const Text('Registration Successful'),
-          content: const Text(
-            'Your account has been registered successfully. It is now pending approval . You will be notified once it is verified.',
+          backgroundColor: _scaffoldBgColor,
+          title: Text('Registration Successful', style: TextStyle(color: _primaryTextColor)),
+          content: Text(
+            'Your account has been registered successfully. It is now pending approval. You will be notified once it is verified.',
+            style: TextStyle(color: _primaryTextColor),
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('OK'),
+              child: Text('OK', style: TextStyle(color: _accentColor)),
               onPressed: () async { 
                 await supabase.auth.signOut(); 
                 
@@ -314,13 +321,13 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (e) {
       if (mounted) {
         Fluttertoast.showToast(
-        msg: 'An unexpected error occurred: $e',
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.TOP,
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+          msg: 'An unexpected error occurred: $e',
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: _primaryTextColor,
+          fontSize: 16.0,
+        );
       }
     } finally {
       if (mounted) {
@@ -338,7 +345,6 @@ class _RegisterPageState extends State<RegisterPage> {
     final cleanPhone = _cleanPhone(trimmedPhone);
 
     try {
-      // Use RPC to call the database function
       final bool phoneExists = await supabase.rpc(
         'check_phone_exists',
         params: {'phone_to_check': cleanPhone},
@@ -350,13 +356,13 @@ class _RegisterPageState extends State<RegisterPage> {
         });
         if (mounted) {
           Fluttertoast.showToast(
-          msg: 'Phone number already in use',
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.TOP,
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
+            msg: 'Phone number already in use',
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.TOP,
+            backgroundColor: Colors.red,
+            textColor: _primaryTextColor,
+            fontSize: 16.0,
+          );
         }
         return false; 
       }
@@ -366,18 +372,17 @@ class _RegisterPageState extends State<RegisterPage> {
       });
       if (mounted) {
         Fluttertoast.showToast(
-        msg: 'Error checking phone: $e',
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.TOP,
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+          msg: 'Error checking phone: $e',
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: _primaryTextColor,
+          fontSize: 16.0,
+        );
       }
-      return false; // Stop!
+      return false;
     }
     
-    // All checks passed
     return true;
   }
 
@@ -435,13 +440,13 @@ class _RegisterPageState extends State<RegisterPage> {
       }
       if (mounted) {
         Fluttertoast.showToast(
-        msg: errorMsg,
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.TOP,
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+          msg: errorMsg,
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: _primaryTextColor,
+          fontSize: 16.0,
+        );
       }
     } catch (e) {
       if (user != null) {
@@ -459,7 +464,7 @@ class _RegisterPageState extends State<RegisterPage> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
+          SnackBar(content: Text(errorMsg, style: TextStyle(color: _primaryTextColor)), backgroundColor: Colors.red),
         );
       }
     }
@@ -518,8 +523,23 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final inputDecoration = InputDecoration(
+      labelStyle: TextStyle(color: _primaryTextColor.withAlpha(179)),
+      hintStyle: TextStyle(color: _primaryTextColor.withAlpha(100)),
+      errorStyle: const TextStyle(color: Colors.redAccent),
+      border: OutlineInputBorder(
+        borderSide: BorderSide(color: _primaryTextColor.withAlpha(77)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: _primaryTextColor.withAlpha(77)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: _accentColor),
+      ),
+    );
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: _scaffoldBgColor,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -528,30 +548,32 @@ class _RegisterPageState extends State<RegisterPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 60),
-              const Center(
+              Center(
                 child: Text(
                   'Your App Name',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 28, 
+                    fontWeight: FontWeight.bold,
+                    color: _primaryTextColor,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
-              const Center(
+              Center(
                 child: Icon(
                   Icons.account_circle,
                   size: 80,
-                  color: Colors.grey,
+                  color: _accentColor,
                 ),
               ),
               const SizedBox(height: 40),
               TextFormField(
                 controller: nameCtrl,
-                decoration: InputDecoration(
+                style: TextStyle(color: _primaryTextColor),
+                cursorColor: _accentColor,
+                decoration: inputDecoration.copyWith(
                   labelText: 'Full Name',
                   errorText: _nameError,
-                  border: const OutlineInputBorder(),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue),
-                  ),
                 ),
                 validator: _validateName,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -560,13 +582,11 @@ class _RegisterPageState extends State<RegisterPage> {
               TextFormField(
                 controller: phoneCtrl,
                 keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
+                style: TextStyle(color: _primaryTextColor),
+                cursorColor: _accentColor,
+                decoration: inputDecoration.copyWith(
                   labelText: 'Phone Number',
                   errorText: _phoneError,
-                  border: const OutlineInputBorder(),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue),
-                  ),
                 ),
                 validator: _validatePhone,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -575,14 +595,12 @@ class _RegisterPageState extends State<RegisterPage> {
               TextFormField(
                 controller: emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
+                style: TextStyle(color: _primaryTextColor),
+                cursorColor: _accentColor,
+                decoration: inputDecoration.copyWith(
                   labelText: 'Email',
                   hintText: 'Enter your email',
                   errorText: _emailError,
-                  border: const OutlineInputBorder(),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue),
-                  ),
                 ),
                 validator: _validateEmail,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -591,14 +609,12 @@ class _RegisterPageState extends State<RegisterPage> {
               TextFormField(
                 controller: passwordCtrl,
                 obscureText: true,
-                decoration: InputDecoration(
+                style: TextStyle(color: _primaryTextColor),
+                cursorColor: _accentColor,
+                decoration: inputDecoration.copyWith(
                   labelText: 'Password',
                   hintText: 'Enter your password',
                   errorText: _passwordError,
-                  border: const OutlineInputBorder(),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue),
-                  ),
                 ),
                 validator: _validatePassword,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -607,14 +623,12 @@ class _RegisterPageState extends State<RegisterPage> {
               TextFormField(
                 controller: confirmPasswordCtrl,
                 obscureText: true,
-                decoration: InputDecoration(
+                style: TextStyle(color: _primaryTextColor),
+                cursorColor: _accentColor,
+                decoration: inputDecoration.copyWith(
                   labelText: 'Confirm Password',
                   hintText: 'Re-enter your password',
                   errorText: _confirmPasswordError,
-                  border: const OutlineInputBorder(),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue),
-                  ),
                 ),
                 validator: _validateConfirmPassword,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -624,17 +638,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 controller: documentCtrl,
                 readOnly: true,
                 onTap: pickFile,
-                decoration: InputDecoration(
+                style: TextStyle(color: _primaryTextColor),
+                cursorColor: _accentColor,
+                decoration: inputDecoration.copyWith(
                   labelText: 'Document or Image',
-                  hintText:
-                      'Upload a document or image (PDF, DOC, DOCX, JPG, PNG, GIF)',
+                  hintText: 'Upload a document or image (PDF, DOC, DOCX, JPG, PNG, GIF)',
                   errorText: _documentError,
-                  suffixIcon:
-                      const Icon(Icons.attach_file, color: Colors.blue),
-                  border: const OutlineInputBorder(),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue),
-                  ),
+                  suffixIcon: Icon(Icons.attach_file, color: _accentColor),
                 ),
                 validator: (_) => _validateDocument(),
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -644,7 +654,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 8),
                 Text(
                   _generalError!,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.redAccent),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -652,27 +662,31 @@ class _RegisterPageState extends State<RegisterPage> {
               ElevatedButton(
                 onPressed: loading ? null : _register,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
+                  backgroundColor: _accentColor,
+                  foregroundColor: _scaffoldBgColor,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
+                  disabledBackgroundColor: _accentColor.withAlpha(128),
                 ),
                 child: loading
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: _scaffoldBgColor,
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text('Register', style: TextStyle(fontSize: 16)),
+                    : const Text('Register', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => context.go('/login'),
+                style: TextButton.styleFrom(
+                  foregroundColor: _accentColor,
+                ),
                 child: const Text('Already have an account? Login'),
               ),
             ],

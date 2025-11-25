@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
-import '../../theme_color.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class CustomerProfile extends StatefulWidget {
@@ -12,6 +11,11 @@ class CustomerProfile extends StatefulWidget {
 }
 
 class _CustomerProfileState extends State<CustomerProfile> {
+  // Define colors from customer_vehicles.dart
+  final Color _scaffoldBgColor = const Color(0xFF060606);
+  final Color _primaryTextColor = const Color(0xFFF5F0EB);
+  final Color _accentColor = const Color(0xFFC0A068);
+
   final _supabase = Supabase.instance.client;
   
   String _fullName = 'Loading...';
@@ -87,8 +91,8 @@ class _CustomerProfileState extends State<CustomerProfile> {
         msg: 'Error loading data: $e',
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.TOP,
-        backgroundColor: ThemeColorManager.getSafeColor(),
-        textColor: ThemeColorManager.getColor(),
+        backgroundColor: _accentColor,
+        textColor: _scaffoldBgColor,
         fontSize: 16.0,
       );
       }
@@ -99,8 +103,11 @@ class _CustomerProfileState extends State<CustomerProfile> {
     final nameController = TextEditingController(text: _fullName);
     final phoneController = TextEditingController(text: _phone);
     final formKey = GlobalKey<FormState>();
-    final Color bgColor = ThemeColorManager.getColor();
-    final Color textColor = ThemeColorManager.getSafeColor();
+    final Color bgColor = _scaffoldBgColor;
+    final Color textColor = _primaryTextColor;
+    final Color saveButtonColor = _accentColor;
+    final Color saveButtonTextColor = _scaffoldBgColor;
+
 
     showModalBottomSheet(
       context: context,
@@ -143,6 +150,7 @@ class _CustomerProfileState extends State<CustomerProfile> {
                       'Full Name',
                       Icons.person,
                       textColor,
+                      saveButtonColor,
                       validator: (value) =>
                           value == null || value.isEmpty ? 'Name cannot be empty' : null,
                     ),
@@ -152,6 +160,7 @@ class _CustomerProfileState extends State<CustomerProfile> {
                       'Phone Number',
                       Icons.phone,
                       textColor,
+                      saveButtonColor,
                       validator: (value) =>
                           value == null || value.isEmpty || value.length < 5
                               ? 'Enter a valid phone number'
@@ -177,8 +186,8 @@ class _CustomerProfileState extends State<CustomerProfile> {
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: textColor,
-                          foregroundColor: bgColor,
+                          backgroundColor: saveButtonColor,
+                          foregroundColor: saveButtonTextColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -190,7 +199,7 @@ class _CustomerProfileState extends State<CustomerProfile> {
                                 height: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  color: bgColor, 
+                                  color: saveButtonTextColor, 
                                 ),
                               )
                             : const Text(
@@ -214,6 +223,7 @@ class _CustomerProfileState extends State<CustomerProfile> {
     String label, 
     IconData icon, 
     Color textColor,
+    Color focusColor,
     {String? Function(String?)? validator}
   ) {
     return TextFormField(
@@ -235,7 +245,7 @@ class _CustomerProfileState extends State<CustomerProfile> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: textColor, width: 2),
+          borderSide: BorderSide(color: focusColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -307,8 +317,8 @@ class _CustomerProfileState extends State<CustomerProfile> {
           msg: 'Profile updated',
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.TOP,
-          backgroundColor: ThemeColorManager.getSafeColor(),
-          textColor: ThemeColorManager.getColor(),
+          backgroundColor: _accentColor,
+          textColor: _scaffoldBgColor,
           fontSize: 16.0,
         );
       }
@@ -318,8 +328,8 @@ class _CustomerProfileState extends State<CustomerProfile> {
           msg: 'Failed to update profile',
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.TOP,
-          backgroundColor: ThemeColorManager.getSafeColor(),
-          textColor: ThemeColorManager.getColor(),
+          backgroundColor: Colors.red,
+          textColor: _primaryTextColor,
           fontSize: 16.0,
         );
       }
@@ -328,8 +338,9 @@ class _CustomerProfileState extends State<CustomerProfile> {
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor = ThemeColorManager.getColor();
-    final Color textColor = ThemeColorManager.getSafeColor();
+    final Color bgColor = _scaffoldBgColor;
+    final Color textColor = _primaryTextColor;
+    final Color accentColor = _accentColor;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -337,9 +348,9 @@ class _CustomerProfileState extends State<CustomerProfile> {
         backgroundColor: bgColor,
         surfaceTintColor: bgColor,
         elevation: 0,
-        systemOverlayStyle: const SystemUiOverlayStyle(
+        systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
+          statusBarIconBrightness: Brightness.light, 
         ),
         toolbarHeight: 80.0,
         centerTitle: false,
@@ -358,7 +369,7 @@ class _CustomerProfileState extends State<CustomerProfile> {
           Padding(
             padding: const EdgeInsets.only(top: 6, right: 4),
             child: IconButton(
-              icon: Icon(Icons.edit_note, color: textColor, size: 30),
+              icon: Icon(Icons.edit_note, color: accentColor, size: 30),
               onPressed: _isLoading ? null : _showEditSheet,
             ),
           ),
@@ -367,17 +378,17 @@ class _CustomerProfileState extends State<CustomerProfile> {
           preferredSize: const Size.fromHeight(1),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 10),
-            color: textColor,
+            color: accentColor,
             height: 0.5,
           ),
         ),
       ),
       body: RefreshIndicator(
         onRefresh: _loadAllData,
-        color: textColor,
+        color: accentColor,
         backgroundColor: bgColor,
         child: _isLoading && _fullName == 'Loading...'
-            ? Center(child: CircularProgressIndicator(color: textColor))
+            ? Center(child: CircularProgressIndicator(color: accentColor))
             : SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(24),
@@ -389,7 +400,8 @@ class _CustomerProfileState extends State<CustomerProfile> {
                     Container(
                       decoration: BoxDecoration(
                         color: textColor.withAlpha(0x0D),
-                        borderRadius: BorderRadius.circular(16),border: Border.all(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: textColor.withAlpha(0x4D), width: 1),
                         
                       ),
                       child: Column(
@@ -411,18 +423,18 @@ class _CustomerProfileState extends State<CustomerProfile> {
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: _buildFlexibleCard('Loyalty Points', _loyaltyPoints.toString(), Icons.loyalty, textColor)),
+          Expanded(child: _buildFlexibleCard('Loyalty Points', _loyaltyPoints.toString(), Icons.loyalty, textColor, accentColor)),
           const SizedBox(width: 16),
-          Expanded(child: _buildFlexibleCard('Membership', _loyaltyLevel, Icons.star_border, textColor)),
+          Expanded(child: _buildFlexibleCard('Membership', _loyaltyLevel, Icons.star_border, textColor, accentColor)),
         ],
       ),
       const SizedBox(height: 14),
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: _buildFlexibleCard('Vehicles Registered', _vehicleCount.toString(), Icons.directions_car_outlined, textColor)),
+          Expanded(child: _buildFlexibleCard('Vehicles Registered', _vehicleCount.toString(), Icons.directions_car_outlined, textColor, accentColor)),
           const SizedBox(width: 16),
-          Expanded(child: _buildFlexibleCard('Total Service Requests', _serviceRequestCount.toString(), Icons.build_outlined, textColor)),
+          Expanded(child: _buildFlexibleCard('Total Service Requests', _serviceRequestCount.toString(), Icons.build_outlined, textColor, accentColor)),
         ],
       ),
     ],
@@ -493,13 +505,13 @@ class _CustomerProfileState extends State<CustomerProfile> {
       ),
     );
   }
-Widget _buildFlexibleCard(String title, String value, IconData icon, Color textColor) {
+Widget _buildFlexibleCard(String title, String value, IconData icon, Color textColor, Color accentColor) {
   return Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: textColor.withAlpha(0x14),
+      color: accentColor.withAlpha(0x14),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: textColor.withAlpha(0x26), width: 1.5),
+      border: Border.all(color: accentColor.withAlpha(0x26), width: 1.5),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -507,10 +519,10 @@ Widget _buildFlexibleCard(String title, String value, IconData icon, Color textC
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: textColor.withAlpha(0x26),
+            color: accentColor.withAlpha(0x26),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: textColor, size: 20),
+          child: Icon(icon, color: accentColor, size: 20),
         ),
         const SizedBox(height: 12),
         Text(
