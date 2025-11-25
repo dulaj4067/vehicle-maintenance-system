@@ -18,9 +18,6 @@ class AdminNav extends StatefulWidget {
 class _AdminNavState extends State<AdminNav> {
   int _selectedIndex = 0;
 
-  // -----------------------------------------------------------------
-  //  Screen widgets
-  // -----------------------------------------------------------------
   static const List<Widget> _screens = [
     AdminHome(),
     RegistrationManagementScreen(),
@@ -30,9 +27,6 @@ class _AdminNavState extends State<AdminNav> {
     AdminSettings(),
   ];
 
-  // -----------------------------------------------------------------
-  //  Titles that match the screens (order must be the same!)
-  // -----------------------------------------------------------------
   static const List<String> _titles = [
     'Dashboard',
     'Registrations',
@@ -50,13 +44,19 @@ class _AdminNavState extends State<AdminNav> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF0D141B),
         title: Text(
           _titles[_selectedIndex],
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
+
+        // This is the ONLY part that changed — clean ash tint + visible shadow
+        scrolledUnderElevation: 4,
+        surfaceTintColor: Colors.grey.withValues(alpha: 0.08), // beautiful ash tint (not purple!)
+        shadowColor: Colors.grey.withValues(alpha: 0.2),
+        elevation: 0,
       ),
       drawer: AdminSideDrawer(
         selectedIndex: _selectedIndex,
