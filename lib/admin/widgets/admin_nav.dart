@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'admin_side_drawer.dart';
-import 'admin_Home.dart';
+import 'admin_home.dart';
 import 'screens/registration_management_screen.dart';
 import 'screens/service_slot_management_screen.dart';
 import 'screens/booking_request_management_screen.dart';
@@ -18,13 +18,13 @@ class AdminNav extends StatefulWidget {
 class _AdminNavState extends State<AdminNav> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _screens = [
-    AdminHome(),
-    RegistrationManagementScreen(),
-    ServiceSlotManagementScreen(),
-    BookingRequestManagementScreen(),
-    MarketingCampaignManagementScreen(),
-    AdminSettings(),
+  final List<Widget> _screens = [
+    const AdminHome(),
+    const RegistrationManagementScreen(),
+    const ServiceSlotManagementScreen(),
+    const BookingRequestManagementScreen(),
+    const MarketingCampaignManagementScreen(),
+    const AdminSettings(),
   ];
 
   static const List<String> _titles = [
@@ -35,6 +35,20 @@ class _AdminNavState extends State<AdminNav> {
     'Campaigns',
     'Settings',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Register navigation callback
+    AdminNavigationController.onNavigate = _onItemTapped;
+  }
+
+  @override
+  void dispose() {
+    // Clean up callback
+    AdminNavigationController.onNavigate = null;
+    super.dispose();
+  }
 
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
@@ -51,10 +65,8 @@ class _AdminNavState extends State<AdminNav> {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
-
-        // This is the ONLY part that changed — clean ash tint + visible shadow
         scrolledUnderElevation: 4,
-        surfaceTintColor: Colors.grey.withValues(alpha: 0.08), // beautiful ash tint (not purple!)
+        surfaceTintColor: Colors.grey.withValues(alpha: 0.08),
         shadowColor: Colors.grey.withValues(alpha: 0.2),
         elevation: 0,
       ),
