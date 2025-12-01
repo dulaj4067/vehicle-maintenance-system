@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -82,7 +84,8 @@ class _MarketingCampaignManagementScreenState
 
     bool isActive = campaign?['is_active'] as bool? ?? true;
     String? imageUrl = campaign?['image_url'] as String?;
-    File? selectedImage;
+    File? selectedImageFile;
+    Uint8List? selectedImageBytes;
 
     final picker = ImagePicker();
 
@@ -114,9 +117,39 @@ class _MarketingCampaignManagementScreenState
 
                 GestureDetector(
                   onTap: () async {
-                    final picked = await picker.pickImage(source: ImageSource.gallery);
-                    if (picked != null && mounted) {
-                      setStateSheet(() => selectedImage = File(picked.path));
+                    try {
+                      final picked = await picker.pickImage(
+                        source: ImageSource.gallery,
+                        maxWidth: 1920,
+                        maxHeight: 1080,
+                        imageQuality: 85,
+                      );
+                      
+                      if (picked != null && mounted) {
+                        if (kIsWeb) {
+                          // For web: get bytes directly
+                          final bytes = await picked.readAsBytes();
+                          setStateSheet(() {
+                            selectedImageBytes = bytes;
+                            selectedImageFile = null;
+                          });
+                        } else {
+                          // For mobile: use File
+                          setStateSheet(() {
+                            selectedImageFile = File(picked.path);
+                            selectedImageBytes = null;
+                          });
+                        }
+                      }
+                    } catch (e) {
+                      debugPrint('Image picker error: $e');
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to pick image: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
                     }
                   },
                   child: Container(
@@ -126,17 +159,22 @@ class _MarketingCampaignManagementScreenState
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: const Color(0xFF1172D4).withAlpha(77), width: 2),
                     ),
-                    child: selectedImage != null
+                    child: selectedImageBytes != null
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(18),
-                            child: Image.file(selectedImage!, fit: BoxFit.cover),
+                            child: Image.memory(selectedImageBytes!, fit: BoxFit.cover),
                           )
-                        : imageUrl != null
+                        : selectedImageFile != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(18),
-                                child: Image.network(imageUrl, fit: BoxFit.cover),
+                                child: Image.file(selectedImageFile!, fit: BoxFit.cover),
                               )
-                            : const _ImagePlaceholder(),
+                            : imageUrl != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(18),
+                                    child: Image.network(imageUrl, fit: BoxFit.cover),
+                                  )
+                                : const _ImagePlaceholder(),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -189,7 +227,7 @@ class _MarketingCampaignManagementScreenState
                 const SizedBox(height: 16),
 
                 DropdownButtonFormField<LoyaltySegment>(
-                  initialValue: selectedSegment,
+                  value: selectedSegment,
                   style: const TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     labelText: 'Target Audience',
@@ -316,18 +354,33 @@ class _MarketingCampaignManagementScreenState
                       return;
                     }
 
-                    setStateSheet(() {});
-
                     String? uploadedImageUrl = imageUrl;
 
                     try {
-                      if (selectedImage != null) {
+                      // Handle image upload for both web and mobile
+                      if (selectedImageBytes != null || selectedImageFile != null) {
                         final fileName = 'marketing_${DateTime.now().millisecondsSinceEpoch}.jpg';
-                        final bytes = await selectedImage!.readAsBytes();
-
-                        await supabase.storage
-                            .from('marketing_images')
-                            .uploadBinary(fileName, bytes, fileOptions: const FileOptions(upsert: false));
+                        
+                        if (kIsWeb && selectedImageBytes != null) {
+                          // Web: upload bytes directly
+                          await supabase.storage
+                              .from('marketing_images')
+                              .uploadBinary(
+                                fileName, 
+                                selectedImageBytes!,
+                                fileOptions: const FileOptions(upsert: false),
+                              );
+                        } else if (selectedImageFile != null) {
+                          // Mobile: read file and upload
+                          final bytes = await selectedImageFile!.readAsBytes();
+                          await supabase.storage
+                              .from('marketing_images')
+                              .uploadBinary(
+                                fileName, 
+                                bytes,
+                                fileOptions: const FileOptions(upsert: false),
+                              );
+                        }
 
                         uploadedImageUrl = supabase.storage.from('marketing_images').getPublicUrl(fileName);
                       }
